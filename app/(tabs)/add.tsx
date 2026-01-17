@@ -1,13 +1,17 @@
 /**
  * Add Transaction Screen
+ * Redesigned with CategoryPicker and WalletPicker bottom sheets
  */
 
+import { CategoryPicker, WalletPicker } from "@/components";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, getCurrentDateString } from "@/utils";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+    KeyboardAvoidingView,
+    Platform,
     View as RNView,
     ScrollView,
     StyleSheet,
@@ -42,6 +46,14 @@ export default function AddTransactionScreen() {
     const categories =
         type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
+    const handleTypeChange = (newType: "expense" | "income") => {
+        setType(newType);
+        // Reset category to first item of new type
+        setCategory(
+            newType === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0],
+        );
+    };
+
     const handleSubmit = async () => {
         if (!amount) return;
         setIsSubmitting(true);
@@ -74,199 +86,156 @@ export default function AddTransactionScreen() {
                 </Text>
             </YStack>
 
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
             >
-                <YStack gap="$4">
-                    {/* Type Toggle */}
-                    <XStack bg={isDark ? "#1F1F1F" : "#E5E7EB"} p="$1" rounded="$4">
-                        <Button
-                            flex={1}
-                            size="$3"
-                            bg={type === "expense" ? "white" : "transparent"}
-                            pressStyle={{ opacity: 0.8 }}
-                            onPress={() => {
-                                setType("expense");
-                                setCategory(EXPENSE_CATEGORIES[0]);
-                            }}
-                        >
-                            <Text
-                                color={type === "expense" ? "#EF4444" : labelColor}
-                                fontWeight="600"
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <YStack gap="$4">
+                        {/* Type Toggle */}
+                        <XStack bg={isDark ? "#1F1F1F" : "#E5E7EB"} p="$1" rounded="$4">
+                            <Button
+                                flex={1}
+                                size="$3"
+                                bg={type === "expense" ? "white" : "transparent"}
+                                pressStyle={{ opacity: 0.8 }}
+                                onPress={() => handleTypeChange("expense")}
                             >
-                                Pengeluaran
+                                <Text
+                                    color={type === "expense" ? "#EF4444" : labelColor}
+                                    fontWeight="600"
+                                >
+                                    Pengeluaran
+                                </Text>
+                            </Button>
+                            <Button
+                                flex={1}
+                                size="$3"
+                                bg={type === "income" ? "white" : "transparent"}
+                                pressStyle={{ opacity: 0.8 }}
+                                onPress={() => handleTypeChange("income")}
+                            >
+                                <Text
+                                    color={type === "income" ? "#10B981" : labelColor}
+                                    fontWeight="600"
+                                >
+                                    Pemasukan
+                                </Text>
+                            </Button>
+                        </XStack>
+
+                        {/* Amount - Larger and more prominent */}
+                        <YStack>
+                            <Text fontSize={12} color={labelColor} mb="$2">
+                                Jumlah (Rp)
+                            </Text>
+                            <RNView
+                                style={[
+                                    styles.amountContainer,
+                                    { backgroundColor: inputBg, borderColor: inputBorder },
+                                ]}
+                            >
+                                <Text fontSize={16} color={labelColor}>
+                                    Rp
+                                </Text>
+                                <TextInput
+                                    value={amount}
+                                    onChangeText={(text) => setAmount(formatCurrencyInput(text))}
+                                    placeholder="0"
+                                    placeholderTextColor={placeholderColor}
+                                    keyboardType="numeric"
+                                    style={[styles.amountInput, { color: textColor }]}
+                                />
+                            </RNView>
+                        </YStack>
+
+                        {/* Date */}
+                        <YStack>
+                            <Text fontSize={12} color={labelColor} mb="$2">
+                                Tanggal
+                            </Text>
+                            <RNView
+                                style={[
+                                    styles.inputContainer,
+                                    { backgroundColor: inputBg, borderColor: inputBorder },
+                                ]}
+                            >
+                                <TextInput
+                                    value={date}
+                                    onChangeText={setDate}
+                                    placeholder="YYYY-MM-DD"
+                                    placeholderTextColor={placeholderColor}
+                                    style={[styles.input, { color: textColor }]}
+                                />
+                            </RNView>
+                        </YStack>
+
+                        {/* Category Picker */}
+                        <YStack>
+                            <Text fontSize={12} color={labelColor} mb="$2">
+                                Kategori
+                            </Text>
+                            <CategoryPicker
+                                categories={categories}
+                                selected={category}
+                                onSelect={setCategory}
+                                type={type}
+                            />
+                        </YStack>
+
+                        {/* Wallet Picker */}
+                        <YStack>
+                            <Text fontSize={12} color={labelColor} mb="$2">
+                                Wallet
+                            </Text>
+                            <WalletPicker
+                                wallets={wallets}
+                                selected={walletId}
+                                onSelect={setWalletId}
+                            />
+                        </YStack>
+
+                        {/* Note */}
+                        <YStack>
+                            <Text fontSize={12} color={labelColor} mb="$2">
+                                Catatan
+                            </Text>
+                            <RNView
+                                style={[
+                                    styles.inputContainer,
+                                    { backgroundColor: inputBg, borderColor: inputBorder },
+                                ]}
+                            >
+                                <TextInput
+                                    value={note}
+                                    onChangeText={setNote}
+                                    placeholder="Opsional"
+                                    placeholderTextColor={placeholderColor}
+                                    style={[styles.input, { color: textColor }]}
+                                />
+                            </RNView>
+                        </YStack>
+
+                        {/* Submit Button */}
+                        <Button
+                            size="$5"
+                            bg="#10B981"
+                            pressStyle={{ opacity: 0.8 }}
+                            disabled={isSubmitting || !amount}
+                            opacity={isSubmitting || !amount ? 0.5 : 1}
+                            onPress={handleSubmit}
+                        >
+                            <Text color="white" fontWeight="bold" fontSize={16}>
+                                {isSubmitting ? "Menyimpan..." : "Simpan Transaksi"}
                             </Text>
                         </Button>
-                        <Button
-                            flex={1}
-                            size="$3"
-                            bg={type === "income" ? "white" : "transparent"}
-                            pressStyle={{ opacity: 0.8 }}
-                            onPress={() => {
-                                setType("income");
-                                setCategory(INCOME_CATEGORIES[0]);
-                            }}
-                        >
-                            <Text
-                                color={type === "income" ? "#10B981" : labelColor}
-                                fontWeight="600"
-                            >
-                                Pemasukan
-                            </Text>
-                        </Button>
-                    </XStack>
-
-                    {/* Date */}
-                    <YStack>
-                        <Text fontSize={12} color={labelColor} mb="$2">
-                            Tanggal
-                        </Text>
-                        <RNView
-                            style={[
-                                styles.inputContainer,
-                                { backgroundColor: inputBg, borderColor: inputBorder },
-                            ]}
-                        >
-                            <TextInput
-                                value={date}
-                                onChangeText={setDate}
-                                placeholder="YYYY-MM-DD"
-                                placeholderTextColor={placeholderColor}
-                                style={[styles.input, { color: textColor }]}
-                            />
-                        </RNView>
                     </YStack>
-
-                    {/* Amount */}
-                    <YStack>
-                        <Text fontSize={12} color={labelColor} mb="$2">
-                            Jumlah (Rp)
-                        </Text>
-                        <RNView
-                            style={[
-                                styles.inputContainer,
-                                { backgroundColor: inputBg, borderColor: inputBorder },
-                            ]}
-                        >
-                            <TextInput
-                                value={amount}
-                                onChangeText={(text) => setAmount(formatCurrencyInput(text))}
-                                placeholder="0"
-                                placeholderTextColor={placeholderColor}
-                                keyboardType="numeric"
-                                style={[styles.input, styles.amountInput, { color: textColor }]}
-                            />
-                        </RNView>
-                    </YStack>
-
-                    {/* Category */}
-                    <YStack>
-                        <Text fontSize={12} color={labelColor} mb="$2">
-                            Kategori
-                        </Text>
-                        <XStack flexWrap="wrap" gap="$2">
-                            {categories.map((cat) => (
-                                <Button
-                                    key={cat}
-                                    size="$2"
-                                    bg={
-                                        category === cat
-                                            ? type === "expense"
-                                                ? "#FEE2E2"
-                                                : "#D1FAE5"
-                                            : isDark
-                                                ? "#374151"
-                                                : "#F3F4F6"
-                                    }
-                                    pressStyle={{ opacity: 0.8 }}
-                                    onPress={() => setCategory(cat)}
-                                >
-                                    <Text
-                                        fontSize={12}
-                                        color={
-                                            category === cat
-                                                ? type === "expense"
-                                                    ? "#EF4444"
-                                                    : "#10B981"
-                                                : labelColor
-                                        }
-                                    >
-                                        {cat}
-                                    </Text>
-                                </Button>
-                            ))}
-                        </XStack>
-                    </YStack>
-
-                    {/* Wallet */}
-                    <YStack>
-                        <Text fontSize={12} color={labelColor} mb="$2">
-                            Wallet
-                        </Text>
-                        <XStack flexWrap="wrap" gap="$2">
-                            {wallets.map((wallet) => (
-                                <Button
-                                    key={wallet.id}
-                                    size="$2"
-                                    bg={
-                                        walletId === wallet.id
-                                            ? "#DBEAFE"
-                                            : isDark
-                                                ? "#374151"
-                                                : "#F3F4F6"
-                                    }
-                                    pressStyle={{ opacity: 0.8 }}
-                                    onPress={() => setWalletId(wallet.id)}
-                                >
-                                    <Text fontSize={16}>{wallet.icon}</Text>
-                                    <Text
-                                        fontSize={12}
-                                        color={walletId === wallet.id ? "#3B82F6" : labelColor}
-                                    >
-                                        {wallet.name}
-                                    </Text>
-                                </Button>
-                            ))}
-                        </XStack>
-                    </YStack>
-
-                    {/* Note */}
-                    <YStack>
-                        <Text fontSize={12} color={labelColor} mb="$2">
-                            Catatan
-                        </Text>
-                        <RNView
-                            style={[
-                                styles.inputContainer,
-                                { backgroundColor: inputBg, borderColor: inputBorder },
-                            ]}
-                        >
-                            <TextInput
-                                value={note}
-                                onChangeText={setNote}
-                                placeholder="Opsional"
-                                placeholderTextColor={placeholderColor}
-                                style={[styles.input, { color: textColor }]}
-                            />
-                        </RNView>
-                    </YStack>
-
-                    {/* Submit Button */}
-                    <Button
-                        size="$5"
-                        bg="#10B981"
-                        pressStyle={{ opacity: 0.8 }}
-                        disabled={isSubmitting || !amount}
-                        opacity={isSubmitting || !amount ? 0.5 : 1}
-                        onPress={handleSubmit}
-                    >
-                        <Text color="white" fontWeight="bold" fontSize={16}>
-                            {isSubmitting ? "Menyimpan..." : "Simpan Transaksi"}
-                        </Text>
-                    </Button>
-                </YStack>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </YStack>
     );
 }
@@ -275,15 +244,26 @@ const styles = StyleSheet.create({
     inputContainer: {
         borderWidth: 1,
         borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
     },
     input: {
         fontSize: 16,
         padding: 0,
     },
+    amountContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 16,
+        gap: 8,
+    },
     amountInput: {
-        fontSize: 20,
+        flex: 1,
+        fontSize: 24,
         fontWeight: "bold",
+        padding: 0,
     },
 });
