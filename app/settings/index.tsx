@@ -73,7 +73,7 @@ export default function SettingsScreen() {
                                 color={subtextColor}
                                 textTransform="uppercase"
                             >
-                                Tampilan
+                                {t("settings.appearance")}
                             </Text>
                         </RNView>
 
@@ -93,10 +93,10 @@ export default function SettingsScreen() {
                                 </RNView>
                                 <YStack>
                                     <Text fontWeight="bold" color={textColor}>
-                                        Mode Gelap
+                                        {t("settings.dark_mode")}
                                     </Text>
                                     <Text fontSize={12} color={subtextColor}>
-                                        {isDark ? "Aktif" : "Nonaktif"}
+                                        {isDark ? t("settings.active") : t("settings.inactive")}
                                     </Text>
                                 </YStack>
                             </XStack>
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
                                 color={subtextColor}
                                 textTransform="uppercase"
                             >
-                                Keuangan
+                                {t("settings.finance")}
                             </Text>
                         </RNView>
 
@@ -219,10 +219,10 @@ export default function SettingsScreen() {
                                     </RNView>
                                     <YStack>
                                         <Text fontWeight="bold" color={textColor}>
-                                            Atur Budget
+                                            {t("settings.manage_budget")}
                                         </Text>
                                         <Text fontSize={12} color={subtextColor}>
-                                            Kelola batasan bulanan
+                                            {t("settings.manage_budget_desc")}
                                         </Text>
                                     </YStack>
                                 </XStack>
@@ -245,10 +245,10 @@ export default function SettingsScreen() {
                                     </RNView>
                                     <YStack>
                                         <Text fontWeight="bold" color={textColor}>
-                                            Daftar Wallet
+                                            {t("settings.wallet_list")}
                                         </Text>
                                         <Text fontSize={12} color={subtextColor}>
-                                            Cash, Bank, E-Wallet
+                                            {t("settings.wallet_list_desc")}
                                         </Text>
                                     </YStack>
                                 </XStack>
@@ -273,7 +273,7 @@ export default function SettingsScreen() {
                                 color={subtextColor}
                                 textTransform="uppercase"
                             >
-                                Lainnya
+                                {t("settings.others")}
                             </Text>
                         </RNView>
 
@@ -296,7 +296,7 @@ export default function SettingsScreen() {
                                         </RNView>
                                     </XStack>
                                     <Text fontSize={12} color={subtextColor}>
-                                        Spenduit Mobile
+                                        {t("settings.app_name")}
                                     </Text>
                                 </YStack>
                             </XStack>

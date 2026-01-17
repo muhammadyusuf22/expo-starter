@@ -753,7 +753,9 @@ export default function WalletsScreen() {
                                     <Text fontSize={40} mb="$2">
                                         📝
                                     </Text>
-                                    <Text color={subtextColor}>Belum ada transaksi</Text>
+                                    <Text color={subtextColor}>
+                                        {t("transactions.no_transactions")}
+                                    </Text>
                                 </YStack>
                             ) : null
                         }

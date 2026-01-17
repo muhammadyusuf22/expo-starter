@@ -3,28 +3,32 @@
  * Pie/Doughnut chart showing expense breakdown by category
  */
 
+import type { CategoryBreakdown } from "@/store";
 import { useThemeStore } from "@/store";
+import { useTranslation } from "react-i18next";
 import { Text as RNText, View as RNView, StyleSheet } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 import { Text } from "tamagui";
 
-interface CategoryData {
-    label: string;
-    value: number;
-    color: string;
-}
-
 interface CategoryChartProps {
-    data: CategoryData[];
+    data: CategoryBreakdown[];
 }
 
 export function CategoryChart({ data }: CategoryChartProps) {
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const isDark = themeMode === "dark";
     const textColor = isDark ? "#FFFFFF" : "#1F2937";
     const subtextColor = isDark ? "#9CA3AF" : "#6B7280";
     const cardBg = isDark ? "#1F1F1F" : "#FFFFFF";
     const cardBorder = isDark ? "#374151" : "#E5E7EB";
+
+    // Sort by value desc
+    const sortedData = [...data].sort((a, b) => b.value - a.value);
+
+    // Filter to top 5, group rest as "Other"
+    // For simplicity, just showing all (assuming usually < 10)
+    // If many, gifted-charts handles it well
 
     if (data.length === 0) {
         return (
@@ -35,12 +39,12 @@ export function CategoryChart({ data }: CategoryChartProps) {
                 ]}
             >
                 <Text fontWeight="bold" color={textColor} mb="$4">
-                    Pengeluaran per Kategori
+                    {t("reports.expense_by_category")}
                 </Text>
                 <RNView style={styles.emptyContainer}>
                     <RNText style={styles.emptyIcon}>📊</RNText>
                     <RNText style={[styles.emptyText, { color: subtextColor }]}>
-                        Belum ada data pengeluaran
+                        {t("reports.no_expense_data")}
                     </RNText>
                 </RNView>
             </RNView>
@@ -61,7 +65,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
             ]}
         >
             <Text fontWeight="bold" color={textColor} mb="$4">
-                Pengeluaran per Kategori
+                {t("reports.expense_by_category")}
             </Text>
             <RNView style={styles.chartContainer}>
                 <PieChart

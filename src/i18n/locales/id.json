@@ -23,6 +23,14 @@
         "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
         "initial_balance": "Saldo Awal"
     },
+    "icon_picker": {
+        "select_icon": "Pilih Ikon",
+        "use_custom_emoji": "Gunakan Emoji Custom dari Keyboard",
+        "type_emoji": "Ketik emoji dari keyboard:",
+        "or_select_from_list": "Atau pilih dari daftar:",
+        "select": "Pilih",
+        "cancel": "Batal"
+    },
     "transactions": {
         "recent": "Transaksi Terakhir",
         "see_all": "Lihat Semua",
@@ -66,14 +74,26 @@
         "language": "Bahasa",
         "theme": "Tema",
         "about": "Tentang",
-        "version": "Versi"
+        "version": "Versi",
+        "appearance": "Tampilan",
+        "dark_mode": "Mode Gelap",
+        "active": "Aktif",
+        "inactive": "Nonaktif",
+        "finance": "Keuangan",
+        "manage_budget": "Atur Anggaran",
+        "manage_budget_desc": "Kelola batasan bulanan",
+        "wallet_list": "Daftar Dompet",
+        "wallet_list_desc": "Tunai, Bank, E-Wallet",
+        "others": "Lainnya",
+        "app_name": "Spenduit Mobile"
     },
     "common": {
         "save": "Simpan",
         "cancel": "Batal",
         "delete": "Hapus",
         "edit": "Ubah",
-        "back": "Kembali"
+        "back": "Kembali",
+        "limit": "Batas"
     },
     "form": {
         "amount": "Nominal",
@@ -105,11 +125,29 @@
         "category_detail": "Detail Kategori",
         "no_expense": "Belum ada pengeluaran",
         "daily_expense_trend": "Tren Pengeluaran Harian",
-        "no_data": "Belum ada data"
+        "no_data": "Belum ada data",
+        "expense_by_category": "Pengeluaran per Kategori",
+        "no_expense_data": "Belum ada data pengeluaran"
     },
     "category": {
         "select_category": "Pilih Kategori",
         "expense_category": "Kategori Pengeluaran",
         "income_category": "Kategori Pemasukan"
+    },
+    "filters": {
+        "all": "Semua",
+        "today": "Hari Ini",
+        "week": "Minggu Ini",
+        "month": "Bulan Ini",
+        "custom": "Custom",
+        "date_range": "Rentang Waktu",
+        "from": "Dari",
+        "to": "Sampai"
+    },
+    "date_picker": {
+        "select_date": "Pilih Tanggal",
+        "done": "Selesai",
+        "today": "Hari Ini",
+        "yesterday": "Kemarin"
     }
 }

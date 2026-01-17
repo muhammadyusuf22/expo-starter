@@ -24,7 +24,7 @@ interface DashboardData {
   totalExpense: number;
   savingsRate: number;
   budgetOverview: Budget[];
-  categoryBreakdown: { label: string; value: number; color: string }[];
+  categoryBreakdown: CategoryBreakdown[];
   recentTransactions: Transaction[];
 }
 
@@ -33,12 +33,18 @@ export interface DailyTrend {
   amount: number;
 }
 
+export interface CategoryBreakdown {
+  label: string;
+  value: number;
+  color: string;
+}
+
 export interface MonthlyReport {
   totalIncome: number;
   totalExpense: number;
   netSavings: number;
   dailyTrend: DailyTrend[];
-  categoryBreakdown: { label: string; value: number; color: string }[];
+  categoryBreakdown: CategoryBreakdown[];
 }
 
 interface AppState {

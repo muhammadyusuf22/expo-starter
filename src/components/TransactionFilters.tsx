@@ -2,6 +2,7 @@ import { DatePicker } from "@/components/pickers";
 import { useThemeStore } from "@/store";
 import { FilterType } from "@/utils";
 import { ArrowRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { TouchableOpacity, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import { Text, XStack, YStack } from "tamagui";
@@ -23,6 +24,7 @@ export function TransactionFilters({
     customEndDate,
     onCustomEndDateChange,
 }: TransactionFiltersProps) {
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const isDark = themeMode === "dark";
     const textColor = isDark ? "#FFFFFF" : "#1F2937";
@@ -65,11 +67,11 @@ export function TransactionFilters({
                 showsHorizontalScrollIndicator={false}
                 data={
                     [
-                        { label: "Semua", value: "all" },
-                        { label: "Hari Ini", value: "today" },
-                        { label: "Minggu Ini", value: "week" },
-                        { label: "Bulan Ini", value: "month" },
-                        { label: "Custom", value: "custom" },
+                        { label: t("filters.all"), value: "all" },
+                        { label: t("filters.today"), value: "today" },
+                        { label: t("filters.week"), value: "week" },
+                        { label: t("filters.month"), value: "month" },
+                        { label: t("filters.custom"), value: "custom" },
                     ] as { label: string; value: FilterType }[]
                 }
                 keyExtractor={(item) => item.value}
@@ -90,12 +92,12 @@ export function TransactionFilters({
                     }}
                 >
                     <Text fontWeight="600" fontSize={14} color={textColor}>
-                        Rentang Waktu
+                        {t("filters.date_range")}
                     </Text>
                     <XStack gap="$3" items="center">
                         <YStack flex={1} gap="$2">
                             <Text fontSize={12} color={subtextColor}>
-                                Dari
+                                {t("filters.from")}
                             </Text>
                             <DatePicker
                                 value={customStartDate}
@@ -107,7 +109,7 @@ export function TransactionFilters({
                         </YStack>
                         <YStack flex={1} gap="$2">
                             <Text fontSize={12} color={subtextColor}>
-                                Sampai
+                                {t("filters.to")}
                             </Text>
                             <DatePicker
                                 value={customEndDate}

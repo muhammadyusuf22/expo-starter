@@ -1,5 +1,6 @@
 export {
   useAppStore,
+  type CategoryBreakdown,
   type DailyTrend,
   type MonthlyReport,
 } from "./useAppStore";

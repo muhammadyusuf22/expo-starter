@@ -1,12 +1,9 @@
-/**
- * Budget Management Screen
- */
-
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, formatRupiah } from "@/utils";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Edit2 } from "lucide-react-native";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     View as RNView,
     ScrollView,
@@ -20,6 +17,7 @@ import { Button, Text, XStack, YStack } from "tamagui";
 export default function BudgetScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const { budgets, updateBudget } = useAppStore();
 
@@ -58,7 +56,7 @@ export default function BudgetScreen() {
                     </RNView>
                 </TouchableOpacity>
                 <Text fontSize={18} fontWeight="bold" color={textColor}>
-                    Atur Budget
+                    {t("settings.manage_budget")}
                 </Text>
             </XStack>
 
@@ -110,13 +108,14 @@ export default function BudgetScreen() {
                                                 </RNView>
                                                 <Button size="$2" bg="#10B981" onPress={handleSave}>
                                                     <Text color="white" fontSize={12}>
-                                                        Simpan
+                                                        {t("common.save")}
                                                     </Text>
                                                 </Button>
                                             </XStack>
                                         ) : (
                                             <Text fontSize={12} color={subtextColor}>
-                                                Limit: {formatRupiah(budget.monthly_limit)}
+                                                {t("common.limit")}:{" "}
+                                                {formatRupiah(budget.monthly_limit)}
                                             </Text>
                                         )}
                                     </YStack>

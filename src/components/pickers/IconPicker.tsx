@@ -6,6 +6,7 @@
 import { useThemeStore } from "@/store";
 import { Check, ChevronDown, Keyboard, X } from "lucide-react-native";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Modal,
     View as RNView,
@@ -68,6 +69,7 @@ export function IconPicker({
     const [showCustomInput, setShowCustomInput] = useState(false);
     const [customEmoji, setCustomEmoji] = useState("");
     const inputRef = useRef<TextInput>(null);
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
 
     const isDark = themeMode === "dark";
@@ -139,7 +141,7 @@ export function IconPicker({
                         style={{ backgroundColor: cardBg }}
                     >
                         <Text fontSize={18} fontWeight="bold" color={textColor}>
-                            Pilih Icon
+                            {t("icon_picker.select_icon")}
                         </Text>
                         <TouchableOpacity onPress={() => setIsOpen(false)}>
                             <RNView style={[styles.closeBtn, { backgroundColor: inputBg }]}>
@@ -153,7 +155,7 @@ export function IconPicker({
                         {showCustomInput ? (
                             <YStack px="$4" py="$3" bg={cardBg} mb="$3" rounded="$4" mx="$4">
                                 <Text fontSize={12} color={subtextColor} mb="$2">
-                                    Ketik emoji dari keyboard:
+                                    {t("icon_picker.type_emoji")}
                                 </Text>
                                 <XStack gap="$2" items="center">
                                     <RNView
@@ -181,14 +183,14 @@ export function IconPicker({
                                         opacity={customEmoji ? 1 : 0.5}
                                     >
                                         <Text color="white" fontWeight="600">
-                                            Pilih
+                                            {t("icon_picker.select")}
                                         </Text>
                                     </Button>
                                     <Button
                                         bg={inputBg}
                                         onPress={() => setShowCustomInput(false)}
                                     >
-                                        <Text color={subtextColor}>Batal</Text>
+                                        <Text color={subtextColor}>{t("icon_picker.cancel")}</Text>
                                     </Button>
                                 </XStack>
                             </YStack>
@@ -200,7 +202,7 @@ export function IconPicker({
                                 <XStack items="center" gap="$2">
                                     <Keyboard size={20} color="#3B82F6" />
                                     <Text color="#3B82F6" fontWeight="600">
-                                        Gunakan Emoji Custom dari Keyboard
+                                        {t("icon_picker.use_custom_emoji")}
                                     </Text>
                                 </XStack>
                             </TouchableOpacity>
@@ -208,7 +210,7 @@ export function IconPicker({
 
                         {/* Icon Grid */}
                         <Text fontSize={12} color={subtextColor} px="$4" mb="$2">
-                            Atau pilih dari daftar:
+                            {t("icon_picker.or_select_from_list")}
                         </Text>
                         <RNView style={styles.iconGrid}>
                             {FINANCE_ICONS.map((icon) => {

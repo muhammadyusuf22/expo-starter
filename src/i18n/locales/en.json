@@ -23,6 +23,14 @@
         "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
         "initial_balance": "Initial Balance"
     },
+    "icon_picker": {
+        "select_icon": "Select Icon",
+        "use_custom_emoji": "Use Custom Emoji from Keyboard",
+        "type_emoji": "Type emoji from keyboard:",
+        "or_select_from_list": "Or select from list:",
+        "select": "Select",
+        "cancel": "Cancel"
+    },
     "transactions": {
         "recent": "Recent Transactions",
         "see_all": "See All",
@@ -66,14 +74,26 @@
         "language": "Language",
         "theme": "Theme",
         "about": "About",
-        "version": "Version"
+        "version": "Version",
+        "appearance": "Appearance",
+        "dark_mode": "Dark Mode",
+        "active": "On",
+        "inactive": "Off",
+        "finance": "Finance",
+        "manage_budget": "Manage Budget",
+        "manage_budget_desc": "Set monthly limits",
+        "wallet_list": "Wallet List",
+        "wallet_list_desc": "Cash, Bank, E-Wallet",
+        "others": "Others",
+        "app_name": "Spenduit Mobile"
     },
     "common": {
         "save": "Save",
         "cancel": "Cancel",
         "delete": "Delete",
         "edit": "Edit",
-        "back": "Back"
+        "back": "Back",
+        "limit": "Limit"
     },
     "form": {
         "amount": "Amount",
@@ -105,11 +125,29 @@
         "category_detail": "Category Detail",
         "no_expense": "No expenses yet",
         "daily_expense_trend": "Daily Expense Trend",
-        "no_data": "No data yet"
+        "no_data": "No data yet",
+        "expense_by_category": "Expense by Category",
+        "no_expense_data": "No expense data yet"
     },
     "category": {
         "select_category": "Select Category",
         "expense_category": "Expense Category",
         "income_category": "Income Category"
+    },
+    "filters": {
+        "all": "All",
+        "today": "Today",
+        "week": "This Week",
+        "month": "This Month",
+        "custom": "Custom",
+        "date_range": "Date Range",
+        "from": "From",
+        "to": "To"
+    },
+    "date_picker": {
+        "select_date": "Select Date",
+        "done": "Done",
+        "today": "Today",
+        "yesterday": "Yesterday"
     }
 }

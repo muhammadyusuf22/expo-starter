@@ -9,6 +9,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { Calendar, ChevronDown } from "lucide-react-native";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Modal,
     Platform,
@@ -32,33 +33,6 @@ function formatDateString(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
-// Format for display (e.g., "Jumat, 17 Januari 2026")
-function formatDisplayDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-    const months = [
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "Juli",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember",
-    ];
-
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-
-    return `${dayName}, ${day} ${month} ${year}`;
-}
-
 // Check if date is today
 function isToday(dateStr: string): boolean {
     const today = formatDateString(new Date());
@@ -73,6 +47,7 @@ function isYesterday(dateStr: string): boolean {
 }
 
 export function DatePicker({ value, onChange }: DatePickerProps) {
+    const { t, i18n } = useTranslation();
     const [showPicker, setShowPicker] = useState(false);
     const themeMode = useThemeStore((state) => state.mode);
 
@@ -86,10 +61,17 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
     const dateValue = useMemo(() => new Date(value), [value]);
 
     const displayText = useMemo(() => {
-        if (isToday(value)) return "Hari Ini";
-        if (isYesterday(value)) return "Kemarin";
-        return formatDisplayDate(value);
-    }, [value]);
+        if (isToday(value)) return t("date_picker.today");
+        if (isYesterday(value)) return t("date_picker.yesterday");
+
+        // Use Intl or toLocaleDateString for localized formatting
+        return new Date(value).toLocaleDateString(i18n.language, {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        });
+    }, [value, i18n.language, t]);
 
     const handleDateChange = (
         event: DateTimePickerEvent,
@@ -209,11 +191,11 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
                         style={{ backgroundColor: cardBg }}
                     >
                         <Text fontSize={18} fontWeight="bold" color={textColor}>
-                            Pilih Tanggal
+                            {t("date_picker.select_date")}
                         </Text>
                         <Button size="$3" bg="#3B82F6" onPress={handleConfirm}>
                             <Text color="white" fontWeight="600">
-                                Selesai
+                                {t("date_picker.done")}
                             </Text>
                         </Button>
                     </XStack>
@@ -230,7 +212,7 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
                                 color={isToday(value) ? "#3B82F6" : textColor}
                                 fontWeight="600"
                             >
-                                Hari Ini
+                                {t("date_picker.today")}
                             </Text>
                         </Button>
                         <Button
@@ -243,7 +225,7 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
                                 color={isYesterday(value) ? "#3B82F6" : textColor}
                                 fontWeight="600"
                             >
-                                Kemarin
+                                {t("date_picker.yesterday")}
                             </Text>
                         </Button>
                     </XStack>
@@ -264,7 +246,12 @@ export function DatePicker({ value, onChange }: DatePickerProps) {
                     {/* Selected Date Display */}
                     <YStack items="center" py="$4">
                         <Text fontSize={24} fontWeight="bold" color={textColor}>
-                            {formatDisplayDate(value)}
+                            {new Date(value).toLocaleDateString(i18n.language, {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                            })}
                         </Text>
                     </YStack>
                 </SafeAreaView>
