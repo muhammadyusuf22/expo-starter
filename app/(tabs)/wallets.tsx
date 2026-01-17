@@ -1,7 +1,10 @@
 /**
  * Wallets Screen
+ * With Edit and Delete functionality
  */
 
+import { IconPicker, WalletPicker } from "@/components";
+import type { Wallet } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, formatRupiah } from "@/utils";
 import BottomSheet, {
@@ -9,22 +12,32 @@ import BottomSheet, {
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeftRight, ChevronRight, Plus } from "lucide-react-native";
+import { ArrowLeftRight, Edit2, Plus, Trash2 } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
+    Alert,
+    Animated,
     View as RNView,
     ScrollView,
     StyleSheet,
     TextInput,
+    TouchableOpacity,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Spinner, Text, XStack, YStack } from "tamagui";
 
 export default function WalletsScreen() {
     const insets = useSafeAreaInsets();
     const themeMode = useThemeStore((state) => state.mode);
-    const { isLoading, wallets, addWallet, transferBetweenWallets } =
-        useAppStore();
+    const {
+        isLoading,
+        wallets,
+        addWallet,
+        updateWallet,
+        deleteWallet,
+        transferBetweenWallets,
+    } = useAppStore();
 
     const isDark = themeMode === "dark";
     const bgColor = isDark ? "#0F0F0F" : "#F9FAFB";
@@ -36,16 +49,24 @@ export default function WalletsScreen() {
 
     // Bottom sheet refs
     const addSheetRef = useRef<BottomSheet>(null);
+    const editSheetRef = useRef<BottomSheet>(null);
     const transferSheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
-    // Form state
+    // Add wallet form state
     const [walletName, setWalletName] = useState("");
     const [walletType, setWalletType] = useState<
         "cash" | "bank" | "ewallet" | "other"
     >("bank");
     const [walletBalance, setWalletBalance] = useState("");
+    const [walletIcon, setWalletIcon] = useState("🏦");
 
+    // Edit wallet form state
+    const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
+    const [editName, setEditName] = useState("");
+    const [editIcon, setEditIcon] = useState("");
+
+    // Transfer form state
     const [transferFrom, setTransferFrom] = useState("");
     const [transferTo, setTransferTo] = useState("");
     const [transferAmount, setTransferAmount] = useState("");
@@ -62,19 +83,53 @@ export default function WalletsScreen() {
             name: walletName,
             type: walletType,
             initial_balance: parseInt(walletBalance.replace(/\D/g, ""), 10) || 0,
-            icon:
-                walletType === "cash"
-                    ? "💵"
-                    : walletType === "bank"
-                        ? "🏦"
-                        : walletType === "ewallet"
-                            ? "📱"
-                            : "💰",
+            icon: walletIcon,
             color: "#10B981",
         });
         addSheetRef.current?.close();
         setWalletName("");
         setWalletBalance("");
+        setWalletIcon("🏦");
+    };
+
+    const handleEditWallet = (wallet: Wallet) => {
+        setEditingWallet(wallet);
+        setEditName(wallet.name);
+        setEditIcon(wallet.icon || "💰");
+        editSheetRef.current?.expand();
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingWallet || !editName) return;
+        await updateWallet(editingWallet.id, {
+            name: editName,
+            icon: editIcon,
+        });
+        editSheetRef.current?.close();
+        setEditingWallet(null);
+    };
+
+    const handleDeleteWallet = async (wallet: Wallet) => {
+        Alert.alert(
+            "Hapus Wallet",
+            `Apakah Anda yakin ingin menghapus "${wallet.name}"?`,
+            [
+                { text: "Batal", style: "cancel" },
+                {
+                    text: "Hapus",
+                    style: "destructive",
+                    onPress: async () => {
+                        const success = await deleteWallet(wallet.id);
+                        if (!success) {
+                            Alert.alert(
+                                "Tidak Bisa Dihapus",
+                                "Wallet ini memiliki transaksi terkait. Hapus transaksi terlebih dahulu atau transfer saldo ke wallet lain.",
+                            );
+                        }
+                    },
+                },
+            ],
+        );
     };
 
     const handleTransfer = async () => {
@@ -159,45 +214,7 @@ export default function WalletsScreen() {
                         </LinearGradient>
                     </RNView>
 
-                    {/* Wallet List */}
-                    {wallets.map((wallet) => (
-                        <RNView
-                            key={wallet.id}
-                            style={[
-                                styles.walletCard,
-                                { backgroundColor: cardBg, borderColor: cardBorder },
-                            ]}
-                        >
-                            <XStack gap="$3" items="center" flex={1}>
-                                <Text fontSize={28}>{wallet.icon}</Text>
-                                <YStack flex={1}>
-                                    <Text fontWeight="bold" color={textColor}>
-                                        {wallet.name}
-                                    </Text>
-                                    <Text
-                                        fontSize={12}
-                                        color={subtextColor}
-                                        textTransform="capitalize"
-                                    >
-                                        {wallet.type}
-                                    </Text>
-                                </YStack>
-                            </XStack>
-                            <XStack items="center" gap="$2">
-                                <Text
-                                    fontWeight="bold"
-                                    color={
-                                        (wallet.current_balance || 0) >= 0 ? "#10B981" : "#EF4444"
-                                    }
-                                >
-                                    {formatRupiah(wallet.current_balance || 0)}
-                                </Text>
-                                <ChevronRight size={14} color="#9CA3AF" />
-                            </XStack>
-                        </RNView>
-                    ))}
-
-                    {/* Transfer Button */}
+                    {/* Transfer Button - Moved to top */}
                     <Button
                         size="$4"
                         bg="transparent"
@@ -216,6 +233,79 @@ export default function WalletsScreen() {
                             Transfer Antar Wallet
                         </Text>
                     </Button>
+
+                    {/* Wallet List with Swipeable */}
+                    {wallets.map((wallet) => (
+                        <Swipeable
+                            key={wallet.id}
+                            friction={2}
+                            rightThreshold={40}
+                            renderRightActions={(progress, dragX) => {
+                                const scale = dragX.interpolate({
+                                    inputRange: [-100, 0],
+                                    outputRange: [1, 0],
+                                    extrapolate: "clamp",
+                                });
+                                return (
+                                    <RNView style={styles.swipeActions}>
+                                        <TouchableOpacity
+                                            style={[styles.swipeBtn, styles.editBtn]}
+                                            onPress={() => handleEditWallet(wallet)}
+                                        >
+                                            <Animated.View style={{ transform: [{ scale }] }}>
+                                                <Edit2 size={20} color="white" />
+                                            </Animated.View>
+                                            <Text color="white" fontSize={11} mt="$1">
+                                                Edit
+                                            </Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.swipeBtn, styles.deleteBtn]}
+                                            onPress={() => handleDeleteWallet(wallet)}
+                                        >
+                                            <Animated.View style={{ transform: [{ scale }] }}>
+                                                <Trash2 size={20} color="white" />
+                                            </Animated.View>
+                                            <Text color="white" fontSize={11} mt="$1">
+                                                Hapus
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </RNView>
+                                );
+                            }}
+                        >
+                            <RNView
+                                style={[
+                                    styles.walletCard,
+                                    { backgroundColor: cardBg, borderColor: cardBorder },
+                                ]}
+                            >
+                                <XStack gap="$3" items="center" flex={1}>
+                                    <Text fontSize={28}>{wallet.icon}</Text>
+                                    <YStack flex={1}>
+                                        <Text fontWeight="bold" color={textColor}>
+                                            {wallet.name}
+                                        </Text>
+                                        <Text
+                                            fontSize={12}
+                                            color={subtextColor}
+                                            textTransform="capitalize"
+                                        >
+                                            {wallet.type}
+                                        </Text>
+                                    </YStack>
+                                </XStack>
+                                <Text
+                                    fontWeight="bold"
+                                    color={
+                                        (wallet.current_balance || 0) >= 0 ? "#10B981" : "#EF4444"
+                                    }
+                                >
+                                    {formatRupiah(wallet.current_balance || 0)}
+                                </Text>
+                            </RNView>
+                        </Swipeable>
+                    ))}
                 </YStack>
             </ScrollView>
 
@@ -248,6 +338,11 @@ export default function WalletsScreen() {
                                 />
                             </RNView>
                         </YStack>
+                        <IconPicker
+                            value={walletIcon}
+                            onChange={setWalletIcon}
+                            label="Icon"
+                        />
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
                                 Tipe
@@ -299,6 +394,49 @@ export default function WalletsScreen() {
                 </BottomSheetScrollView>
             </BottomSheet>
 
+            {/* Edit Wallet Bottom Sheet */}
+            <BottomSheet
+                ref={editSheetRef}
+                index={-1}
+                snapPoints={["50%"]}
+                enablePanDownToClose
+                backdropComponent={renderBackdrop}
+                backgroundStyle={{ backgroundColor: cardBg }}
+                handleIndicatorStyle={{ backgroundColor: subtextColor }}
+            >
+                <BottomSheetScrollView style={{ padding: 20 }}>
+                    <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
+                        Edit Wallet
+                    </Text>
+                    <YStack gap="$3">
+                        <YStack>
+                            <Text fontSize={12} color={subtextColor} mb="$1">
+                                Nama Wallet
+                            </Text>
+                            <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
+                                <TextInput
+                                    value={editName}
+                                    onChangeText={setEditName}
+                                    placeholder="Nama wallet"
+                                    placeholderTextColor="#9CA3AF"
+                                    style={[styles.input, { color: textColor }]}
+                                />
+                            </RNView>
+                        </YStack>
+                        <IconPicker value={editIcon} onChange={setEditIcon} label="Icon" />
+                        <Button
+                            bg="#10B981"
+                            pressStyle={{ opacity: 0.8 }}
+                            onPress={handleSaveEdit}
+                        >
+                            <Text color="white" fontWeight="bold">
+                                Simpan Perubahan
+                            </Text>
+                        </Button>
+                    </YStack>
+                </BottomSheetScrollView>
+            </BottomSheet>
+
             {/* Transfer Bottom Sheet */}
             <BottomSheet
                 ref={transferSheetRef}
@@ -318,47 +456,21 @@ export default function WalletsScreen() {
                             <Text fontSize={12} color={subtextColor} mb="$1">
                                 Dari Wallet
                             </Text>
-                            <XStack gap="$2" flexWrap="wrap">
-                                {wallets.map((w) => (
-                                    <Button
-                                        key={w.id}
-                                        size="$2"
-                                        bg={transferFrom === w.id ? "#FEE2E2" : inputBg}
-                                        onPress={() => setTransferFrom(w.id)}
-                                    >
-                                        <Text fontSize={14}>{w.icon}</Text>
-                                        <Text
-                                            fontSize={12}
-                                            color={transferFrom === w.id ? "#EF4444" : subtextColor}
-                                        >
-                                            {w.name}
-                                        </Text>
-                                    </Button>
-                                ))}
-                            </XStack>
+                            <WalletPicker
+                                wallets={wallets}
+                                selected={transferFrom}
+                                onSelect={setTransferFrom}
+                            />
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
                                 Ke Wallet
                             </Text>
-                            <XStack gap="$2" flexWrap="wrap">
-                                {wallets.map((w) => (
-                                    <Button
-                                        key={w.id}
-                                        size="$2"
-                                        bg={transferTo === w.id ? "#D1FAE5" : inputBg}
-                                        onPress={() => setTransferTo(w.id)}
-                                    >
-                                        <Text fontSize={14}>{w.icon}</Text>
-                                        <Text
-                                            fontSize={12}
-                                            color={transferTo === w.id ? "#10B981" : subtextColor}
-                                        >
-                                            {w.name}
-                                        </Text>
-                                    </Button>
-                                ))}
-                            </XStack>
+                            <WalletPicker
+                                wallets={wallets}
+                                selected={transferTo}
+                                onSelect={setTransferTo}
+                            />
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
@@ -418,5 +530,30 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         padding: 0,
+    },
+    iconBtn: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    swipeActions: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    swipeBtn: {
+        width: 70,
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 12,
+        marginLeft: 8,
+    },
+    editBtn: {
+        backgroundColor: "#3B82F6",
+    },
+    deleteBtn: {
+        backgroundColor: "#EF4444",
     },
 });

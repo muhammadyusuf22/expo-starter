@@ -111,7 +111,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadDashboard: async () => {
-    const { transactions, budgets } = get();
+    const { transactions, budgets, wallets } = get();
 
     // Filter current month transactions
     const monthTransactions = transactions.filter((tx) =>
@@ -132,7 +132,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     });
 
-    const balance = totalIncome - totalExpense;
+    // Calculate total balance from all wallets (initial + transactions)
+    const totalWalletBalance = wallets.reduce(
+      (sum, w) => sum + (w.current_balance || 0),
+      0,
+    );
+
+    // Savings rate based on monthly income vs expense
     const savingsRate =
       totalIncome > 0
         ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100)
@@ -170,7 +176,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set({
       dashboard: {
-        balance,
+        balance: totalWalletBalance, // Use total wallet balance instead of just income-expense
         totalIncome,
         totalExpense,
         savingsRate,
