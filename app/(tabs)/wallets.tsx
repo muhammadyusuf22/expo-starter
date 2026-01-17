@@ -98,6 +98,8 @@ export default function WalletsScreen() {
     const [historyStart, setHistoryStart] = useState(getCurrentDateString());
     const [historyEnd, setHistoryEnd] = useState(getCurrentDateString());
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Calculate net worth
     const netWorth = wallets.reduce(
         (sum, w) => sum + (w.current_balance || 0),
@@ -106,17 +108,24 @@ export default function WalletsScreen() {
 
     const handleAddWallet = async () => {
         if (!walletName) return;
-        await addWallet({
-            name: walletName,
-            type: walletType,
-            initial_balance: parseInt(walletBalance.replace(/\D/g, ""), 10) || 0,
-            icon: walletIcon,
-            color: "#10B981",
-        });
-        addSheetRef.current?.close();
-        setWalletName("");
-        setWalletBalance("");
-        setWalletIcon("🏦");
+        setIsSubmitting(true);
+        try {
+            await addWallet({
+                name: walletName,
+                type: walletType,
+                initial_balance: parseInt(walletBalance.replace(/\D/g, ""), 10) || 0,
+                icon: walletIcon,
+                color: "#10B981",
+            });
+            addSheetRef.current?.close();
+            setWalletName("");
+            setWalletBalance("");
+            setWalletIcon("🏦");
+        } catch (error) {
+            console.error("Failed to add wallet", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleEditWallet = (wallet: Wallet) => {
@@ -128,12 +137,19 @@ export default function WalletsScreen() {
 
     const handleSaveEdit = async () => {
         if (!editingWallet || !editName) return;
-        await updateWallet(editingWallet.id, {
-            name: editName,
-            icon: editIcon,
-        });
-        editSheetRef.current?.close();
-        setEditingWallet(null);
+        setIsSubmitting(true);
+        try {
+            await updateWallet(editingWallet.id, {
+                name: editName,
+                icon: editIcon,
+            });
+            editSheetRef.current?.close();
+            setEditingWallet(null);
+        } catch (error) {
+            console.error("Failed to update wallet", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDeleteWallet = async (wallet: Wallet) => {
@@ -168,16 +184,21 @@ export default function WalletsScreen() {
         )
             return;
         const amount = parseInt(transferAmount.replace(/\D/g, ""), 10);
-        await transferBetweenWallets(
-            transferFrom,
-            transferTo,
-            amount,
-            "Transfer antar wallet",
-        );
-        transferSheetRef.current?.close();
-        setTransferAmount("");
-        transferSheetRef.current?.close();
-        setTransferAmount("");
+        setIsSubmitting(true);
+        try {
+            await transferBetweenWallets(
+                transferFrom,
+                transferTo,
+                amount,
+                "Transfer antar wallet",
+            );
+            transferSheetRef.current?.close();
+            setTransferAmount("");
+        } catch (error) {
+            console.error("Failed to transfer", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // History Logic
@@ -496,10 +517,18 @@ export default function WalletsScreen() {
                             bg="#3B82F6"
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleAddWallet}
+                            disabled={isSubmitting}
+                            opacity={isSubmitting ? 0.7 : 1}
                         >
-                            <Text color="white" fontWeight="bold">
-                                Simpan Wallet
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold">
+                                        Simpan Wallet
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
@@ -539,10 +568,18 @@ export default function WalletsScreen() {
                             bg="#10B981"
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleSaveEdit}
+                            disabled={isSubmitting}
+                            opacity={isSubmitting ? 0.7 : 1}
                         >
-                            <Text color="white" fontWeight="bold">
-                                Simpan Perubahan
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold">
+                                        Simpan Perubahan
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
@@ -604,10 +641,18 @@ export default function WalletsScreen() {
                             bg="#06B6D4"
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleTransfer}
+                            disabled={isSubmitting}
+                            opacity={isSubmitting ? 0.7 : 1}
                         >
-                            <Text color="white" fontWeight="bold">
-                                Transfer
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold">
+                                        Transfer
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>

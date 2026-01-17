@@ -18,7 +18,7 @@ import {
     TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Text, XStack, YStack } from "tamagui";
+import { Button, Spinner, Text, XStack, YStack } from "tamagui";
 
 export default function AddTransactionScreen() {
     const insets = useSafeAreaInsets();
@@ -216,9 +216,15 @@ export default function AddTransactionScreen() {
                             opacity={isSubmitting || !amount ? 0.5 : 1}
                             onPress={handleSubmit}
                         >
-                            <Text color="white" fontWeight="bold" fontSize={16}>
-                                {isSubmitting ? "Menyimpan..." : "Simpan Transaksi"}
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold" fontSize={16}>
+                                        Simpan Transaksi
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </ScrollView>

@@ -75,6 +75,8 @@ export default function GoalsScreen() {
     const [historyHasMore, setHistoryHasMore] = useState(true);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Calculate totals
     const totalSaved = goals.reduce((sum, g) => sum + g.current_amount, 0);
     const totalTarget = goals.reduce((sum, g) => sum + g.target_amount, 0);
@@ -83,34 +85,53 @@ export default function GoalsScreen() {
 
     const handleAddGoal = async () => {
         if (!formName || !formTarget) return;
-        await addGoal({
-            name: formName,
-            target_amount: parseInt(formTarget.replace(/\D/g, ""), 10) || 0,
-            deadline: null,
-            icon: "🎯",
-            color: "#10B981",
-        });
-        addSheetRef.current?.close();
-        setFormName("");
-        setFormTarget("");
+        setIsSubmitting(true);
+        try {
+            await addGoal({
+                name: formName,
+                target_amount: parseInt(formTarget.replace(/\D/g, ""), 10) || 0,
+                deadline: null,
+                icon: "🎯",
+                color: "#10B981",
+            });
+            addSheetRef.current?.close();
+            setFormName("");
+            setFormTarget("");
+        } catch (error) {
+            console.error("Failed to add goal", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleTopup = async () => {
         if (!selectedGoal || !topupAmount) return;
-        const amount = parseInt(topupAmount.replace(/\D/g, ""), 10);
-        if (isTopup) {
-            await topupGoal(selectedGoal.id, amount, topupNote, topupWallet || null);
-        } else {
-            await withdrawGoal(
-                selectedGoal.id,
-                amount,
-                topupNote,
-                topupWallet || null,
-            );
+        setIsSubmitting(true);
+        try {
+            const amount = parseInt(topupAmount.replace(/\D/g, ""), 10);
+            if (isTopup) {
+                await topupGoal(
+                    selectedGoal.id,
+                    amount,
+                    topupNote,
+                    topupWallet || null,
+                );
+            } else {
+                await withdrawGoal(
+                    selectedGoal.id,
+                    amount,
+                    topupNote,
+                    topupWallet || null,
+                );
+            }
+            topupSheetRef.current?.close();
+            setTopupAmount("");
+            setTopupNote("");
+        } catch (error) {
+            console.error("Failed to topup/withdraw", error);
+        } finally {
+            setIsSubmitting(false);
         }
-        topupSheetRef.current?.close();
-        setTopupAmount("");
-        setTopupNote("");
     };
 
     const openTopupSheet = (goal: Goal, topup: boolean) => {
@@ -477,10 +498,18 @@ export default function GoalsScreen() {
                             bg="#8B5CF6"
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleAddGoal}
+                            disabled={isSubmitting}
+                            opacity={isSubmitting ? 0.7 : 1}
                         >
-                            <Text color="white" fontWeight="bold">
-                                Simpan Target
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold">
+                                        Simpan Target
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
@@ -554,10 +583,18 @@ export default function GoalsScreen() {
                             bg={isTopup ? "#10B981" : "#EF4444"}
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleTopup}
+                            disabled={isSubmitting}
+                            opacity={isSubmitting ? 0.7 : 1}
                         >
-                            <Text color="white" fontWeight="bold">
-                                {isTopup ? "Tambah" : "Tarik Dana"}
-                            </Text>
+                            <XStack gap="$2" items="center" justify="center">
+                                {isSubmitting ? (
+                                    <Spinner color="white" />
+                                ) : (
+                                    <Text color="white" fontWeight="bold">
+                                        {isTopup ? "Tambah" : "Tarik Dana"}
+                                    </Text>
+                                )}
+                            </XStack>
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
