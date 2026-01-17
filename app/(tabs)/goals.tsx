@@ -2,17 +2,19 @@
  * Goals Screen - Savings Targets
  */
 
+import { WalletPicker } from "@/components";
 import type { Goal } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, formatRupiah } from "@/utils";
 import BottomSheet, {
     BottomSheetBackdrop,
-    BottomSheetView,
+    BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronRight, Plus, Trash2 } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
+    Alert,
     View as RNView,
     ScrollView,
     StyleSheet,
@@ -45,7 +47,7 @@ export default function GoalsScreen() {
     // Bottom sheet refs
     const addSheetRef = useRef<BottomSheet>(null);
     const topupSheetRef = useRef<BottomSheet>(null);
-    const snapPoints = useMemo(() => ["55%"], []);
+    const snapPoints = useMemo(() => ["70%", "90%"], []);
 
     // Form state
     const [formName, setFormName] = useState("");
@@ -53,6 +55,7 @@ export default function GoalsScreen() {
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
     const [topupAmount, setTopupAmount] = useState("");
     const [topupWallet, setTopupWallet] = useState("");
+    const [topupNote, setTopupNote] = useState("");
     const [isTopup, setIsTopup] = useState(true);
 
     // Calculate totals
@@ -79,12 +82,18 @@ export default function GoalsScreen() {
         if (!selectedGoal || !topupAmount) return;
         const amount = parseInt(topupAmount.replace(/\D/g, ""), 10);
         if (isTopup) {
-            await topupGoal(selectedGoal.id, amount, "", topupWallet || null);
+            await topupGoal(selectedGoal.id, amount, topupNote, topupWallet || null);
         } else {
-            await withdrawGoal(selectedGoal.id, amount, "", topupWallet || null);
+            await withdrawGoal(
+                selectedGoal.id,
+                amount,
+                topupNote,
+                topupWallet || null,
+            );
         }
         topupSheetRef.current?.close();
         setTopupAmount("");
+        setTopupNote("");
     };
 
     const openTopupSheet = (goal: Goal, topup: boolean) => {
@@ -268,7 +277,20 @@ export default function GoalsScreen() {
                                         size="$3"
                                         bg="#FEE2E2"
                                         pressStyle={{ opacity: 0.8 }}
-                                        onPress={() => deleteGoal(goal.id)}
+                                        onPress={() => {
+                                            Alert.alert(
+                                                "Hapus Target",
+                                                `Apakah Anda yakin ingin menghapus target "${goal.name}"?`,
+                                                [
+                                                    { text: "Batal", style: "cancel" },
+                                                    {
+                                                        text: "Hapus",
+                                                        style: "destructive",
+                                                        onPress: () => deleteGoal(goal.id),
+                                                    },
+                                                ],
+                                            );
+                                        }}
                                     >
                                         <Trash2 size={14} color="#EF4444" />
                                     </Button>
@@ -279,7 +301,6 @@ export default function GoalsScreen() {
                 </YStack>
             </ScrollView>
 
-            {/* Add Goal Bottom Sheet */}
             <BottomSheet
                 ref={addSheetRef}
                 index={-1}
@@ -288,8 +309,11 @@ export default function GoalsScreen() {
                 backdropComponent={renderBackdrop}
                 backgroundStyle={{ backgroundColor: cardBg }}
                 handleIndicatorStyle={{ backgroundColor: subtextColor }}
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+                android_keyboardInputMode="adjustResize"
             >
-                <BottomSheetView style={{ padding: 20 }}>
+                <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
                         Tambah Target
                     </Text>
@@ -333,7 +357,7 @@ export default function GoalsScreen() {
                             </Text>
                         </Button>
                     </YStack>
-                </BottomSheetView>
+                </BottomSheetScrollView>
             </BottomSheet>
 
             {/* Topup/Withdraw Bottom Sheet */}
@@ -345,8 +369,11 @@ export default function GoalsScreen() {
                 backdropComponent={renderBackdrop}
                 backgroundStyle={{ backgroundColor: cardBg }}
                 handleIndicatorStyle={{ backgroundColor: subtextColor }}
+                keyboardBehavior="interactive"
+                keyboardBlurBehavior="restore"
+                android_keyboardInputMode="adjustResize"
             >
-                <BottomSheetView style={{ padding: 20 }}>
+                <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$1">
                         {isTopup ? "💰 Tambah Tabungan" : "💸 Tarik Dana"}
                     </Text>
@@ -371,26 +398,31 @@ export default function GoalsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Dari Wallet
+                                {isTopup ? "Dari Wallet" : "Ke Wallet"}
                             </Text>
-                            <XStack gap="$2" flexWrap="wrap">
-                                {wallets.map((w) => (
-                                    <Button
-                                        key={w.id}
-                                        size="$2"
-                                        bg={topupWallet === w.id ? "#DBEAFE" : inputBg}
-                                        onPress={() => setTopupWallet(w.id)}
-                                    >
-                                        <Text fontSize={14}>{w.icon}</Text>
-                                        <Text
-                                            fontSize={12}
-                                            color={topupWallet === w.id ? "#3B82F6" : subtextColor}
-                                        >
-                                            {w.name}
-                                        </Text>
-                                    </Button>
-                                ))}
-                            </XStack>
+                            <WalletPicker
+                                wallets={wallets}
+                                selected={topupWallet}
+                                onSelect={setTopupWallet}
+                            />
+                        </YStack>
+                        <YStack>
+                            <Text fontSize={12} color={subtextColor} mb="$1">
+                                Catatan (Opsional)
+                            </Text>
+                            <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
+                                <TextInput
+                                    value={topupNote}
+                                    onChangeText={setTopupNote}
+                                    placeholder={
+                                        isTopup
+                                            ? "Contoh: Topup dari gaji"
+                                            : "Contoh: Kebutuhan darurat"
+                                    }
+                                    placeholderTextColor="#9CA3AF"
+                                    style={[styles.input, { color: textColor }]}
+                                />
+                            </RNView>
                         </YStack>
                         <Button
                             bg={isTopup ? "#10B981" : "#EF4444"}
@@ -402,7 +434,7 @@ export default function GoalsScreen() {
                             </Text>
                         </Button>
                     </YStack>
-                </BottomSheetView>
+                </BottomSheetScrollView>
             </BottomSheet>
         </YStack>
     );
