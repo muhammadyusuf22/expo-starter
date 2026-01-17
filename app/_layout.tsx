@@ -1,43 +1,62 @@
+import { initializeDatabase } from "@/db";
+import { useAppStore, useThemeStore } from "@/store";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { TamaguiProvider, Theme } from "tamagui";
-
-import tamaguiConfig from "../tamagui.config";
+import config from "../tamagui.config";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [dbReady, setDbReady] = useState(false);
+  const themeMode = useThemeStore((state) => state.mode);
+  const initialize = useAppStore((state) => state.initialize);
+
+  const [fontsLoaded] = useFonts({
     Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
     InterBold: require("@tamagui/font-inter/otf/Inter-Bold.otf"),
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    async function setup() {
+      try {
+        // Initialize database
+        await initializeDatabase();
+        setDbReady(true);
+
+        // Load all data
+        await initialize();
+      } catch (error) {
+        console.error("[App] Setup error:", error);
+      }
+    }
+    setup();
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && dbReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, dbReady]);
 
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded || !dbReady) {
     return null;
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <TamaguiProvider config={tamaguiConfig} defaultTheme="dark">
-        <Theme name="dark">
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#0F0F1A" },
-            }}
-          />
+      <TamaguiProvider config={config} defaultTheme={themeMode}>
+        <Theme name={themeMode}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
         </Theme>
       </TamaguiProvider>
     </GestureHandlerRootView>
