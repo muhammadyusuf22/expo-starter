@@ -17,6 +17,19 @@ interface DashboardData {
   recentTransactions: Transaction[];
 }
 
+export interface DailyTrend {
+  day: number;
+  amount: number;
+}
+
+export interface MonthlyReport {
+  totalIncome: number;
+  totalExpense: number;
+  netSavings: number;
+  dailyTrend: DailyTrend[];
+  categoryBreakdown: { label: string; value: number; color: string }[];
+}
+
 interface AppState {
   // Data
   isLoading: boolean;
@@ -42,6 +55,8 @@ interface AppState {
     offset?: number,
     filters?: { startDate?: string; endDate?: string; walletId?: string },
   ) => Promise<Transaction[]>;
+
+  getMonthlyReport: (month: number, year: number) => Promise<MonthlyReport>;
 
   // Goals
   loadGoals: () => Promise<void>;
@@ -495,7 +510,31 @@ export const useAppStore = create<AppState>((set, get) => ({
       ],
     );
 
+    // If initial balance > 0, create a transaction
+    if (wallet.initial_balance > 0) {
+      const txId = generateId("TRX");
+      const created_at = getCurrentTimestamp();
+      // Use created_at date part for transaction date
+      const date = created_at.split("T")[0];
+
+      await db.runAsync(
+        "INSERT INTO transactions (id, date, type, category, amount, note, wallet_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          txId,
+          date,
+          "income",
+          "Lainnya", // Or "Saldo Awal" if we add that category
+          wallet.initial_balance,
+          "Saldo Awal Wallet",
+          id,
+          created_at,
+        ],
+      );
+    }
+
     await get().loadWallets();
+    await get().loadTransactions(); // Reload transactions needed
+    await get().loadDashboard(); // Reload dashboard needed
     return id;
   },
 
@@ -575,5 +614,57 @@ export const useAppStore = create<AppState>((set, get) => ({
     );
     await get().loadBudgets();
     await get().loadDashboard();
+  },
+
+  getMonthlyReport: async (month: number, year: number) => {
+    const db = await getDatabase();
+    // month is 1-indexed (1 = January)
+    const startStr = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endStr = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
+
+    const query = `SELECT * FROM transactions WHERE date >= ? AND date <= ? ORDER BY date ASC`;
+    const rows = await db.getAllAsync<Transaction>(query, [startStr, endStr]);
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const expenseByDay: Record<number, number> = {};
+    const categoryTotals: Record<string, number> = {};
+
+    rows.forEach((t) => {
+      if (t.type === "income") {
+        totalIncome += t.amount;
+      } else {
+        totalExpense += t.amount;
+        const day = parseInt(t.date.split("-")[2], 10);
+        expenseByDay[day] = (expenseByDay[day] || 0) + t.amount;
+        categoryTotals[t.category] =
+          (categoryTotals[t.category] || 0) + t.amount;
+      }
+    });
+
+    const netSavings = totalIncome - totalExpense;
+
+    // Daily Trend
+    const dailyTrend: DailyTrend[] = Array.from({ length: lastDay }, (_, i) => {
+      const day = i + 1;
+      return { day, amount: expenseByDay[day] || 0 };
+    });
+
+    const categoryBreakdown = Object.entries(categoryTotals)
+      .map(([label, value]) => ({
+        label,
+        value,
+        color: CATEGORY_COLORS[label] || "#6B7280",
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    return {
+      totalIncome,
+      totalExpense,
+      netSavings,
+      dailyTrend,
+      categoryBreakdown,
+    };
   },
 }));
