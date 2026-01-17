@@ -3,7 +3,7 @@
  * Redesigned with CategoryPicker and WalletPicker bottom sheets
  */
 
-import { CategoryPicker, WalletPicker } from "@/components";
+import { CategoryPicker, DatePicker, WalletPicker } from "@/components";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, getCurrentDateString } from "@/utils";
@@ -153,25 +153,12 @@ export default function AddTransactionScreen() {
                             </RNView>
                         </YStack>
 
-                        {/* Date */}
+                        {/* Date Picker */}
                         <YStack>
                             <Text fontSize={12} color={labelColor} mb="$2">
                                 Tanggal
                             </Text>
-                            <RNView
-                                style={[
-                                    styles.inputContainer,
-                                    { backgroundColor: inputBg, borderColor: inputBorder },
-                                ]}
-                            >
-                                <TextInput
-                                    value={date}
-                                    onChangeText={setDate}
-                                    placeholder="YYYY-MM-DD"
-                                    placeholderTextColor={placeholderColor}
-                                    style={[styles.input, { color: textColor }]}
-                                />
-                            </RNView>
+                            <DatePicker value={date} onChange={setDate} />
                         </YStack>
 
                         {/* Category Picker */}
