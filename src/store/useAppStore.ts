@@ -40,7 +40,7 @@ interface AppState {
   getTransactions: (
     limit?: number,
     offset?: number,
-    filters?: { startDate?: string; endDate?: string },
+    filters?: { startDate?: string; endDate?: string; walletId?: string },
   ) => Promise<Transaction[]>;
 
   // Goals
@@ -262,12 +262,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   getTransactions: async (limit = 20, offset = 0, filters) => {
     const db = await getDatabase();
-    let query = "SELECT * FROM transactions";
+    let query = "SELECT * FROM transactions WHERE 1=1";
     const params: any[] = [];
 
     if (filters?.startDate && filters?.endDate) {
-      query += " WHERE date BETWEEN ? AND ?";
+      query += " AND date BETWEEN ? AND ?";
       params.push(filters.startDate, filters.endDate);
+    }
+
+    if (filters?.walletId) {
+      query += " AND wallet_id = ?";
+      params.push(filters.walletId);
     }
 
     query += " ORDER BY date DESC, created_at DESC LIMIT ? OFFSET ?";

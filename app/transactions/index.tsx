@@ -1,10 +1,11 @@
-import { DatePicker } from "@/components/pickers";
-import { Transaction } from "@/db";
+import { TransactionFilters } from "@/components"; // Added
+import { Transaction } from "@/db"; // Removed unused import if needed, but keeping for now
 import { TransactionItem } from "@/features/dashboard";
 import { useAppStore, useThemeStore } from "@/store";
+import { FilterType, getFilterDateRange } from "@/utils"; // Added
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { ArrowRight } from "lucide-react-native";
+// Modified imports
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -15,7 +16,7 @@ import {
 } from "react-native";
 import { Text, XStack, YStack } from "tamagui";
 
-type FilterType = "all" | "today" | "week" | "month" | "custom";
+// Removed local FilterType definition
 
 export default function TransactionsScreen() {
     const router = useRouter();
@@ -41,34 +42,7 @@ export default function TransactionsScreen() {
     const [customStartDate, setCustomStartDate] = useState(getCurrentDate());
     const [customEndDate, setCustomEndDate] = useState(getCurrentDate());
 
-    const getFilterDateRange = (type: FilterType) => {
-        const now = new Date();
-        const today = now.toISOString().split("T")[0];
-
-        if (type === "today") {
-            return { startDate: today, endDate: today };
-        }
-        if (type === "week") {
-            const d = new Date(now);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-            const monday = new Date(d.setDate(diff));
-            const startOfWeek = monday.toISOString().split("T")[0];
-            return { startDate: startOfWeek, endDate: today };
-        }
-        if (type === "month") {
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            // Local time adjustment to avoid timezone issues when converting to ISO
-            const year = startOfMonth.getFullYear();
-            const month = String(startOfMonth.getMonth() + 1).padStart(2, "0");
-            const day = String(startOfMonth.getDate()).padStart(2, "0");
-            return { startDate: `${year}-${month}-${day}`, endDate: today };
-        }
-        if (type === "custom") {
-            return { startDate: customStartDate, endDate: customEndDate };
-        }
-        return undefined;
-    };
+    // Removed getFilterDateRange definition
 
     const loadTransactions = async (refresh = false, newFilter?: FilterType) => {
         const currentFilter = newFilter || filter;
@@ -78,7 +52,11 @@ export default function TransactionsScreen() {
         setIsLoading(true);
         try {
             const currentOffset = refresh ? 0 : offset;
-            const dateRange = getFilterDateRange(currentFilter);
+            const dateRange = getFilterDateRange(
+                currentFilter,
+                customStartDate,
+                customEndDate,
+            );
 
             const data = await getTransactions(20, currentOffset, dateRange);
 
@@ -130,33 +108,7 @@ export default function TransactionsScreen() {
         }
     }, [customStartDate, customEndDate]);
 
-    const renderFilterChip = (label: string, value: FilterType) => {
-        const isActive = filter === value;
-        return (
-            <TouchableOpacity
-                onPress={() => handleFilterChange(value)}
-                style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    borderRadius: 20,
-                    backgroundColor: isActive
-                        ? "#10B981"
-                        : isDark
-                            ? "#374151"
-                            : "#E5E7EB",
-                    marginRight: 8,
-                }}
-            >
-                <Text
-                    color={isActive ? "white" : textColor}
-                    fontWeight={isActive ? "bold" : "normal"}
-                    fontSize={13}
-                >
-                    {label}
-                </Text>
-            </TouchableOpacity>
-        );
-    };
+    // Removed renderFilterChip
 
     return (
         <YStack flex={1} bg={bgColor} pt={50}>
@@ -173,61 +125,15 @@ export default function TransactionsScreen() {
             </XStack>
 
             {/* Filters */}
-            <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                <FlatList
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    data={
-                        [
-                            { label: "Semua", value: "all" },
-                            { label: "Hari Ini", value: "today" },
-                            { label: "Minggu Ini", value: "week" },
-                            { label: "Bulan Ini", value: "month" },
-                            { label: "Custom", value: "custom" },
-                        ] as { label: string; value: FilterType }[]
-                    }
-                    keyExtractor={(item) => item.value}
-                    renderItem={({ item }) => renderFilterChip(item.label, item.value)}
-                    style={{ marginBottom: filter === "custom" ? 16 : 0 }}
+            <View style={{ paddingHorizontal: 16, paddingBottom: 0 }}>
+                <TransactionFilters
+                    filter={filter}
+                    onFilterChange={handleFilterChange}
+                    customStartDate={customStartDate}
+                    onCustomStartDateChange={setCustomStartDate}
+                    customEndDate={customEndDate}
+                    onCustomEndDateChange={setCustomEndDate}
                 />
-
-                {filter === "custom" && (
-                    <YStack
-                        bg={cardBg}
-                        p="$4"
-                        mt="$1"
-                        gap="$3"
-                        style={{
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor,
-                        }}
-                    >
-                        <Text fontWeight="600" fontSize={14} color={textColor}>
-                            Rentang Waktu
-                        </Text>
-                        <XStack gap="$3" items="center">
-                            <YStack flex={1} gap="$2">
-                                <Text fontSize={12} color={subtextColor}>
-                                    Dari
-                                </Text>
-                                <DatePicker
-                                    value={customStartDate}
-                                    onChange={setCustomStartDate}
-                                />
-                            </YStack>
-                            <YStack pt="$6">
-                                <ArrowRight size={16} color={subtextColor} />
-                            </YStack>
-                            <YStack flex={1} gap="$2">
-                                <Text fontSize={12} color={subtextColor}>
-                                    Sampai
-                                </Text>
-                                <DatePicker value={customEndDate} onChange={setCustomEndDate} />
-                            </YStack>
-                        </XStack>
-                    </YStack>
-                )}
             </View>
 
             {/* List */}

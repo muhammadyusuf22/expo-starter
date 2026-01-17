@@ -4,7 +4,7 @@
  */
 
 import type { Transaction } from "@/db";
-import { useThemeStore } from "@/store";
+import { useAppStore, useThemeStore } from "@/store";
 import { formatRupiah, formatShortDate } from "@/utils";
 import { ArrowDown, ArrowUp } from "lucide-react-native";
 import { View as RNView, StyleSheet, TouchableOpacity } from "react-native";
@@ -20,6 +20,10 @@ export function TransactionItem({
     onPress,
 }: TransactionItemProps) {
     const themeMode = useThemeStore((state) => state.mode);
+    const wallets = useAppStore((state) => state.wallets);
+    const wallet = wallets.find((w) => w.id === transaction.wallet_id);
+    const walletName = wallet ? wallet.name : "Unknown Wallet";
+
     const isDark = themeMode === "dark";
     const textColor = isDark ? "#FFFFFF" : "#1F2937";
     const subtextColor = isDark ? "#9CA3AF" : "#6B7280";
@@ -52,7 +56,7 @@ export function TransactionItem({
                             {transaction.category}
                         </Text>
                         <Text fontSize={12} color={subtextColor} numberOfLines={1}>
-                            {formatShortDate(transaction.date)}
+                            {formatShortDate(transaction.date)} • {walletName}
                             {transaction.note ? ` • ${transaction.note}` : ""}
                         </Text>
                     </YStack>

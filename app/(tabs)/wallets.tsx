@@ -3,18 +3,28 @@
  * With Edit and Delete functionality
  */
 
-import { IconPicker, WalletPicker } from "@/components";
+import { IconPicker, TransactionFilters, WalletPicker } from "@/components";
 import type { Wallet } from "@/db";
+import { Transaction } from "@/db";
+import { TransactionItem } from "@/features/dashboard";
 import { useAppStore, useThemeStore } from "@/store";
-import { formatCurrencyInput, formatRupiah } from "@/utils";
+import {
+    FilterType,
+    formatCurrencyInput,
+    formatRupiah,
+    getCurrentDateString,
+    getFilterDateRange,
+} from "@/utils";
 import BottomSheet, {
     BottomSheetBackdrop,
+    BottomSheetFlatList,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeftRight, Edit2, Plus, Trash2 } from "lucide-react-native";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     Animated,
     View as RNView,
@@ -37,6 +47,7 @@ export default function WalletsScreen() {
         updateWallet,
         deleteWallet,
         transferBetweenWallets,
+        getTransactions, // Added
     } = useAppStore();
 
     const isDark = themeMode === "dark";
@@ -51,6 +62,7 @@ export default function WalletsScreen() {
     const addSheetRef = useRef<BottomSheet>(null);
     const editSheetRef = useRef<BottomSheet>(null);
     const transferSheetRef = useRef<BottomSheet>(null);
+    const historySheetRef = useRef<BottomSheet>(null); // Added
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
     // Add wallet form state
@@ -70,6 +82,21 @@ export default function WalletsScreen() {
     const [transferFrom, setTransferFrom] = useState("");
     const [transferTo, setTransferTo] = useState("");
     const [transferAmount, setTransferAmount] = useState("");
+
+    // History state
+    const [selectedHistoryWallet, setSelectedHistoryWallet] =
+        useState<Wallet | null>(null);
+    const [historyTransactions, setHistoryTransactions] = useState<Transaction[]>(
+        [],
+    );
+    const [historyOffset, setHistoryOffset] = useState(0);
+    const [historyHasMore, setHistoryHasMore] = useState(true);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+    // History Filters
+    const [historyFilter, setHistoryFilter] = useState<FilterType>("all");
+    const [historyStart, setHistoryStart] = useState(getCurrentDateString());
+    const [historyEnd, setHistoryEnd] = useState(getCurrentDateString());
 
     // Calculate net worth
     const netWorth = wallets.reduce(
@@ -149,6 +176,88 @@ export default function WalletsScreen() {
         );
         transferSheetRef.current?.close();
         setTransferAmount("");
+        transferSheetRef.current?.close();
+        setTransferAmount("");
+    };
+
+    // History Logic
+    const loadWalletHistory = async (
+        walletId: string,
+        refresh = false,
+        filter?: FilterType,
+    ) => {
+        const currentFilter = filter || historyFilter;
+        if (!refresh && !historyHasMore && currentFilter === historyFilter) return;
+        if (isLoadingHistory) return;
+
+        setIsLoadingHistory(true);
+        try {
+            const currentOffset = refresh ? 0 : historyOffset;
+            const dateRange = getFilterDateRange(
+                currentFilter,
+                historyStart,
+                historyEnd,
+            );
+            const data = await getTransactions(20, currentOffset, {
+                walletId,
+                ...dateRange,
+            });
+
+            if (refresh) {
+                setHistoryTransactions(data);
+                setHistoryOffset(20);
+            } else {
+                // Filter duplicates
+                const existingIds = new Set(historyTransactions.map((t) => t.id));
+                const newTx = data.filter((t) => !existingIds.has(t.id));
+                setHistoryTransactions((prev) => [...prev, ...newTx]);
+                setHistoryOffset((prev) => prev + 20);
+            }
+
+            setHistoryHasMore(data.length >= 20);
+        } catch (error) {
+            console.error("Failed to load history", error);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
+
+    const handleHistoryFilterChange = (newFilter: FilterType) => {
+        setHistoryFilter(newFilter);
+        if (selectedHistoryWallet) {
+            setHistoryTransactions([]);
+            setHistoryHasMore(true);
+            setHistoryOffset(0);
+            loadWalletHistory(selectedHistoryWallet.id, true, newFilter);
+        }
+    };
+
+    // Effect for custom dates
+    useEffect(() => {
+        if (historyFilter === "custom" && selectedHistoryWallet) {
+            setHistoryOffset(0);
+            setHistoryHasMore(true);
+            loadWalletHistory(selectedHistoryWallet.id, true);
+        }
+    }, [historyStart, historyEnd]);
+
+    const handleWalletPress = (wallet: Wallet) => {
+        setSelectedHistoryWallet(wallet);
+        setHistoryFilter("all"); // Reset filter
+        setHistoryTransactions([]); // clear previous
+        setHistoryHasMore(true);
+        setHistoryOffset(0);
+        historySheetRef.current?.expand();
+        // Reset dates
+        setHistoryStart(getCurrentDateString());
+        setHistoryEnd(getCurrentDateString());
+        loadWalletHistory(wallet.id, true, "all");
+    };
+
+    const handleLoadMoreHistory = () => {
+        if (selectedHistoryWallet) {
+            loadWalletHistory(selectedHistoryWallet.id, false);
+        }
     };
 
     const renderBackdrop = useCallback(
@@ -274,7 +383,9 @@ export default function WalletsScreen() {
                                 );
                             }}
                         >
-                            <RNView
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => handleWalletPress(wallet)} // Added press
                                 style={[
                                     styles.walletCard,
                                     { backgroundColor: cardBg, borderColor: cardBorder },
@@ -303,7 +414,7 @@ export default function WalletsScreen() {
                                 >
                                     {formatRupiah(wallet.current_balance || 0)}
                                 </Text>
-                            </RNView>
+                            </TouchableOpacity>
                         </Swipeable>
                     ))}
                 </YStack>
@@ -500,6 +611,75 @@ export default function WalletsScreen() {
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
+            </BottomSheet>
+
+            {/* Wallet History Bottom Sheet */}
+            <BottomSheet
+                ref={historySheetRef}
+                index={-1}
+                snapPoints={snapPoints}
+                enablePanDownToClose
+                backdropComponent={renderBackdrop}
+                backgroundStyle={{ backgroundColor: cardBg }}
+                handleIndicatorStyle={{ backgroundColor: subtextColor }}
+            >
+                <YStack flex={1} p="$4">
+                    {selectedHistoryWallet && (
+                        <YStack mb="$4" items="center">
+                            <Text fontSize={40} mb="$2">
+                                {selectedHistoryWallet.icon}
+                            </Text>
+                            <Text fontSize={20} fontWeight="bold" color={textColor}>
+                                Riwayat {selectedHistoryWallet.name}
+                            </Text>
+                            <Text fontSize={14} color={subtextColor}>
+                                Saldo:{" "}
+                                {formatRupiah(selectedHistoryWallet.current_balance || 0)}
+                            </Text>
+                        </YStack>
+                    )}
+
+                    <TransactionFilters
+                        filter={historyFilter}
+                        onFilterChange={handleHistoryFilterChange}
+                        customStartDate={historyStart}
+                        onCustomStartDateChange={setHistoryStart}
+                        customEndDate={historyEnd}
+                        onCustomEndDateChange={setHistoryEnd}
+                    />
+
+                    <BottomSheetFlatList
+                        data={historyTransactions}
+                        keyExtractor={(item: Transaction) => item.id}
+                        renderItem={({ item }: { item: Transaction }) => (
+                            <RNView style={{ marginBottom: 12 }}>
+                                <TransactionItem transaction={item} />
+                            </RNView>
+                        )}
+                        onEndReached={handleLoadMoreHistory}
+                        onEndReachedThreshold={0.5}
+                        ListEmptyComponent={
+                            !isLoadingHistory ? (
+                                <YStack items="center" py="$10">
+                                    <Text fontSize={40} mb="$2">
+                                        📝
+                                    </Text>
+                                    <Text color={subtextColor}>Belum ada transaksi</Text>
+                                </YStack>
+                            ) : null
+                        }
+                        ListFooterComponent={
+                            isLoadingHistory ? (
+                                <ActivityIndicator
+                                    size="small"
+                                    color="#3B82F6"
+                                    style={{ margin: 20 }}
+                                />
+                            ) : null
+                        }
+                        contentContainerStyle={{ paddingBottom: 50 }}
+                    />
+                </YStack>
             </BottomSheet>
         </YStack>
     );

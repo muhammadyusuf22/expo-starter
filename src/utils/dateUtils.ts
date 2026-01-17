@@ -5,6 +5,8 @@
 /**
  * Get current date in YYYY-MM-DD format
  */
+export type FilterType = "all" | "today" | "week" | "month" | "custom";
+
 export function getCurrentDateString(): string {
   return new Date().toISOString().split("T")[0];
 }
@@ -71,4 +73,40 @@ export function isCurrentMonth(dateString: string): boolean {
     date.getMonth() === now.getMonth() &&
     date.getFullYear() === now.getFullYear()
   );
+}
+
+/**
+ * Get date range for filter
+ */
+export function getFilterDateRange(
+  type: FilterType,
+  customStart: string,
+  customEnd: string,
+): { startDate: string; endDate: string } | undefined {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+
+  if (type === "today") {
+    return { startDate: today, endDate: today };
+  }
+  if (type === "week") {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const monday = new Date(d.setDate(diff));
+    const startOfWeek = monday.toISOString().split("T")[0];
+    return { startDate: startOfWeek, endDate: today };
+  }
+  if (type === "month") {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Local time adjustment to avoid timezone issues when converting to ISO
+    const year = startOfMonth.getFullYear();
+    const month = String(startOfMonth.getMonth() + 1).padStart(2, "0");
+    const day = String(startOfMonth.getDate()).padStart(2, "0");
+    return { startDate: `${year}-${month}-${day}`, endDate: today };
+  }
+  if (type === "custom") {
+    return { startDate: customStart, endDate: customEnd };
+  }
+  return undefined;
 }
