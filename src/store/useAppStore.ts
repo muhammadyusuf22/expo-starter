@@ -2,7 +2,7 @@
  * Main App Store - Transactions, Goals, Wallets, Budgets
  */
 
-import type { Budget, Goal, Transaction, Wallet } from "@/db";
+import type { Budget, Goal, GoalTransaction, Transaction, Wallet } from "@/db";
 import { generateId, getCurrentTimestamp, getDatabase } from "@/db";
 import { isCurrentMonth } from "@/utils";
 import { create } from "zustand";
@@ -75,6 +75,13 @@ interface AppState {
   // Budgets
   loadBudgets: () => Promise<void>;
   updateBudget: (category: string, limit: number) => Promise<void>;
+
+  // Goal Transactions
+  getGoalTransactions: (
+    goalId: string,
+    limit?: number,
+    offset?: number,
+  ) => Promise<GoalTransaction[]>;
 }
 
 // Category colors for chart
@@ -218,6 +225,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     );
 
     await get().loadTransactions();
+    await get().loadWallets(); // Reload wallets to update balance
     await get().loadDashboard();
     return id;
   },
@@ -235,6 +243,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     ]);
 
     await get().loadTransactions();
+    await get().loadWallets(); // Reload wallets to update balance
     await get().loadDashboard();
   },
 
@@ -242,6 +251,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const db = await getDatabase();
     await db.runAsync("DELETE FROM transactions WHERE id = ?", [id]);
     await get().loadTransactions();
+    await get().loadWallets(); // Reload wallets to update balance
     await get().loadDashboard();
   },
 
@@ -401,6 +411,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     await get().loadGoals();
+  },
+
+  getGoalTransactions: async (goalId, limit = 20, offset = 0) => {
+    const db = await getDatabase();
+    const rows = await db.getAllAsync<GoalTransaction>(
+      "SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+      [goalId, limit, offset],
+    );
+    return rows;
   },
 
   // =====================

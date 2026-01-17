@@ -3,15 +3,23 @@
  */
 
 import { WalletPicker } from "@/components";
-import type { Goal } from "@/db";
+import type { Goal, GoalTransaction } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, formatRupiah } from "@/utils";
 import BottomSheet, {
     BottomSheetBackdrop,
+    BottomSheetFlatList,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { ChevronRight, Plus, Trash2 } from "lucide-react-native";
+import {
+    ArrowDown,
+    ArrowUp,
+    ChevronRight,
+    History as HistoryIcon,
+    Plus,
+    Trash2,
+} from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
     Alert,
@@ -19,6 +27,7 @@ import {
     ScrollView,
     StyleSheet,
     TextInput,
+    TouchableOpacity,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Spinner, Text, XStack, YStack } from "tamagui";
@@ -34,6 +43,7 @@ export default function GoalsScreen() {
         withdrawGoal,
         deleteGoal,
         wallets,
+        getGoalTransactions,
     } = useAppStore();
 
     const isDark = themeMode === "dark";
@@ -47,6 +57,7 @@ export default function GoalsScreen() {
     // Bottom sheet refs
     const addSheetRef = useRef<BottomSheet>(null);
     const topupSheetRef = useRef<BottomSheet>(null);
+    const historySheetRef = useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
     // Form state
@@ -57,6 +68,12 @@ export default function GoalsScreen() {
     const [topupWallet, setTopupWallet] = useState("");
     const [topupNote, setTopupNote] = useState("");
     const [isTopup, setIsTopup] = useState(true);
+    const [historyTransactions, setHistoryTransactions] = useState<
+        GoalTransaction[]
+    >([]);
+    const [historyOffset, setHistoryOffset] = useState(0);
+    const [historyHasMore, setHistoryHasMore] = useState(true);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
     // Calculate totals
     const totalSaved = goals.reduce((sum, g) => sum + g.current_amount, 0);
@@ -102,6 +119,113 @@ export default function GoalsScreen() {
         setTopupWallet(wallets[0]?.id || "");
         topupSheetRef.current?.expand();
     };
+
+    const handleOpenHistory = async (goal: Goal) => {
+        if (isLoadingHistory) return;
+        setSelectedGoal(goal);
+        setHistoryTransactions([]);
+        setHistoryOffset(0);
+        setHistoryHasMore(true);
+        setIsLoadingHistory(true);
+
+        try {
+            const txs = await getGoalTransactions(goal.id, 20, 0);
+            setHistoryTransactions(txs);
+            setHistoryOffset(20);
+            if (txs.length < 20) setHistoryHasMore(false);
+            historySheetRef.current?.expand();
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
+
+    const handleLoadMoreHistory = async () => {
+        if (!selectedGoal || !historyHasMore || isLoadingHistory) return;
+        setIsLoadingHistory(true);
+        try {
+            const txs = await getGoalTransactions(selectedGoal.id, 20, historyOffset);
+            if (txs.length > 0) {
+                setHistoryTransactions((prev) => {
+                    const existingIds = new Set(prev.map((p) => p.id));
+                    const newUnique = txs.filter((t) => !existingIds.has(t.id));
+                    return [...prev, ...newUnique];
+                });
+                setHistoryOffset((prev) => prev + 20);
+                if (txs.length < 20) setHistoryHasMore(false);
+            } else {
+                setHistoryHasMore(false);
+            }
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
+
+    const renderHistoryItem = useCallback(
+        ({ item: tx }: { item: GoalTransaction }) => {
+            const wallet = wallets.find((w) => w.id === tx.wallet_id);
+            return (
+                <XStack
+                    justify="space-between"
+                    items="center"
+                    p="$3"
+                    bg={inputBg}
+                    style={{ borderRadius: 12 }}
+                    mb="$3"
+                >
+                    <XStack gap="$3" items="center">
+                        <RNView
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: tx.type === "topup" ? "#D1FAE5" : "#FEE2E2",
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }}
+                        >
+                            {tx.type === "topup" ? (
+                                <ArrowUp size={20} color="#10B981" />
+                            ) : (
+                                <ArrowDown size={20} color="#EF4444" />
+                            )}
+                        </RNView>
+                        <YStack>
+                            <Text fontWeight="600" color={textColor}>
+                                {tx.type === "topup" ? "Topup" : "Penarikan"}
+                            </Text>
+                            {wallet && (
+                                <Text fontSize={12} color={subtextColor}>
+                                    {tx.type === "topup" ? "Dari" : "Ke"} {wallet.name}
+                                </Text>
+                            )}
+                            <Text fontSize={11} color={subtextColor}>
+                                {new Date(tx.created_at).toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                            </Text>
+                            {tx.note && (
+                                <Text fontSize={11} color={subtextColor} mt="$1">
+                                    "{tx.note}"
+                                </Text>
+                            )}
+                        </YStack>
+                    </XStack>
+                    <Text
+                        fontWeight="bold"
+                        color={tx.type === "topup" ? "#10B981" : "#EF4444"}
+                    >
+                        {tx.type === "topup" ? "+" : "-"}
+                        {formatRupiah(tx.amount)}
+                    </Text>
+                </XStack>
+            );
+        },
+        [inputBg, textColor, subtextColor, wallets],
+    );
 
     const renderBackdrop = useCallback(
         (props: any) => (
@@ -184,12 +308,14 @@ export default function GoalsScreen() {
                         </YStack>
                     ) : (
                         goals.map((goal) => (
-                            <RNView
+                            <TouchableOpacity
                                 key={goal.id}
                                 style={[
                                     styles.goalCard,
                                     { backgroundColor: cardBg, borderColor: cardBorder },
                                 ]}
+                                onPress={() => handleOpenHistory(goal)}
+                                activeOpacity={0.7}
                             >
                                 <XStack justify="space-between" items="flex-start" mb="$2">
                                     <XStack gap="$2" items="center">
@@ -295,7 +421,7 @@ export default function GoalsScreen() {
                                         <Trash2 size={14} color="#EF4444" />
                                     </Button>
                                 </XStack>
-                            </RNView>
+                            </TouchableOpacity>
                         ))
                     )}
                 </YStack>
@@ -435,6 +561,47 @@ export default function GoalsScreen() {
                         </Button>
                     </YStack>
                 </BottomSheetScrollView>
+            </BottomSheet>
+
+            {/* History Bottom Sheet */}
+            <BottomSheet
+                ref={historySheetRef}
+                index={-1}
+                snapPoints={snapPoints}
+                enablePanDownToClose
+                backdropComponent={renderBackdrop}
+                backgroundStyle={{ backgroundColor: cardBg }}
+                handleIndicatorStyle={{ backgroundColor: subtextColor }}
+            >
+                <BottomSheetFlatList
+                    data={historyTransactions}
+                    keyExtractor={(item: GoalTransaction) => item.id}
+                    renderItem={renderHistoryItem}
+                    contentContainerStyle={{ padding: 20, paddingBottom: 50 }}
+                    onEndReached={handleLoadMoreHistory}
+                    onEndReachedThreshold={0.5}
+                    ListHeaderComponent={
+                        <YStack mb="$4">
+                            <XStack gap="$2" items="center" mb="$1">
+                                <HistoryIcon size={20} color={textColor} />
+                                <Text fontSize={18} fontWeight="bold" color={textColor}>
+                                    Riwayat Transaksi
+                                </Text>
+                            </XStack>
+                            <Text fontSize={14} color={subtextColor}>
+                                {selectedGoal?.name}
+                            </Text>
+                        </YStack>
+                    }
+                    ListEmptyComponent={
+                        <YStack items="center" py="$8">
+                            <Text fontSize={32} mb="$2">
+                                📝
+                            </Text>
+                            <Text color={subtextColor}>Belum ada riwayat transaksi</Text>
+                        </YStack>
+                    }
+                />
             </BottomSheet>
         </YStack>
     );
