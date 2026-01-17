@@ -70,12 +70,14 @@ interface TransactionListProps {
     transactions: Transaction[];
     onItemPress?: (transaction: Transaction) => void;
     emptyMessage?: string;
+    onSeeAll?: () => void;
 }
 
 export function TransactionList({
     transactions,
     onItemPress,
     emptyMessage,
+    onSeeAll,
 }: TransactionListProps) {
     const themeMode = useThemeStore((state) => state.mode);
     const isDark = themeMode === "dark";
@@ -126,6 +128,15 @@ export function TransactionList({
                     />
                 ))}
             </YStack>
+            {onSeeAll && (
+                <TouchableOpacity onPress={onSeeAll} style={{ marginTop: 12 }}>
+                    <XStack justify="center" items="center" py="$2">
+                        <Text color="#10B981" fontWeight="600" fontSize={13}>
+                            Lihat Semua
+                        </Text>
+                    </XStack>
+                </TouchableOpacity>
+            )}
         </RNView>
     );
 }

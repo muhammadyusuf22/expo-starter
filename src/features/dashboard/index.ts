@@ -3,5 +3,6 @@ export {
   BudgetProgress,
   CategoryChart,
   SavingsRateCard,
+  TransactionItem,
   TransactionList,
 } from "./components";

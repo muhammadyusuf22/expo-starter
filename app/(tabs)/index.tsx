@@ -94,6 +94,7 @@ export default function HomeScreen() {
                         onItemPress={(tx) => {
                             console.log("Edit transaction:", tx.id);
                         }}
+                        onSeeAll={() => router.push("/transactions" as any)}
                     />
                 </YStack>
             </ScrollView>

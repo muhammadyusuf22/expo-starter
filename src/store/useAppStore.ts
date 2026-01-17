@@ -37,6 +37,11 @@ interface AppState {
   ) => Promise<string>;
   updateTransaction: (id: string, tx: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
+  getTransactions: (
+    limit?: number,
+    offset?: number,
+    filters?: { startDate?: string; endDate?: string },
+  ) => Promise<Transaction[]>;
 
   // Goals
   loadGoals: () => Promise<void>;
@@ -178,8 +183,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       }),
     );
 
-    // Recent transactions (last 10)
-    const recentTransactions = transactions.slice(0, 10);
+    // Recent transactions (last 5)
+    const recentTransactions = transactions.slice(0, 5);
 
     set({
       dashboard: {
@@ -253,6 +258,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadTransactions();
     await get().loadWallets(); // Reload wallets to update balance
     await get().loadDashboard();
+  },
+
+  getTransactions: async (limit = 20, offset = 0, filters) => {
+    const db = await getDatabase();
+    let query = "SELECT * FROM transactions";
+    const params: any[] = [];
+
+    if (filters?.startDate && filters?.endDate) {
+      query += " WHERE date BETWEEN ? AND ?";
+      params.push(filters.startDate, filters.endDate);
+    }
+
+    query += " ORDER BY date DESC, created_at DESC LIMIT ? OFFSET ?";
+    params.push(limit, offset);
+
+    const rows = await db.getAllAsync<Transaction>(query, params);
+    return rows;
   },
 
   // =====================
