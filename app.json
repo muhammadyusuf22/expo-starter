@@ -51,12 +51,12 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c252656c-d9d1-42f3-87f6-6b588e804e62"
+        "projectId": "89ac939d-2b96-4fbf-9888-cc043d08c280"
       }
     },
     "owner": "hexaflow",
     "updates": {
-      "url": "https://u.expo.dev/c252656c-d9d1-42f3-87f6-6b588e804e62"
+      "url": "https://u.expo.dev/89ac939d-2b96-4fbf-9888-cc043d08c280"
     },
     "runtimeVersion": {
       "policy": "appVersion"
