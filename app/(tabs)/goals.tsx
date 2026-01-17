@@ -4,35 +4,44 @@
 
 import { WalletPicker } from "@/components";
 import type { Goal, GoalTransaction } from "@/db";
+import { EditGoalTransactionSheet } from "@/features/goals/components/EditGoalTransactionSheet";
 import { useAppStore, useThemeStore } from "@/store";
 import { formatCurrencyInput, formatRupiah } from "@/utils";
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetFlatList,
+    BottomSheetModal,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
+import { Link, useRouter } from "expo-router";
 import {
     ArrowDown,
     ArrowUp,
     ChevronRight,
-    History as HistoryIcon,
+    Edit2,
     Plus,
+    Target,
     Trash2,
 } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next"; // Added import
 import {
     Alert,
+    Animated,
     View as RNView,
     ScrollView,
     StyleSheet,
     TextInput,
     TouchableOpacity,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Spinner, Text, XStack, YStack } from "tamagui";
 
 export default function GoalsScreen() {
+    const { t } = useTranslation();
+    const router = useRouter();
     const insets = useSafeAreaInsets();
     const themeMode = useThemeStore((state) => state.mode);
     const {
@@ -58,12 +67,14 @@ export default function GoalsScreen() {
     const addSheetRef = useRef<BottomSheet>(null);
     const topupSheetRef = useRef<BottomSheet>(null);
     const historySheetRef = useRef<BottomSheet>(null);
+    const editTxSheetRef = useRef<BottomSheetModal>(null);
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
     // Form state
     const [formName, setFormName] = useState("");
     const [formTarget, setFormTarget] = useState("");
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [selectedTx, setSelectedTx] = useState<GoalTransaction | null>(null);
     const [topupAmount, setTopupAmount] = useState("");
     const [topupWallet, setTopupWallet] = useState("");
     const [topupNote, setTopupNote] = useState("");
@@ -78,7 +89,7 @@ export default function GoalsScreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Calculate totals
-    const totalSaved = goals.reduce((sum, g) => sum + g.current_amount, 0);
+    const totalSaved = goals.reduce((sum, g) => sum + (g.current_amount || 0), 0);
     const totalTarget = goals.reduce((sum, g) => sum + g.target_amount, 0);
     const overallProgress =
         totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
@@ -181,68 +192,134 @@ export default function GoalsScreen() {
         }
     };
 
+    const handleEditTx = (tx: GoalTransaction) => {
+        setSelectedTx(tx);
+        editTxSheetRef.current?.present();
+    };
+
+    const handleDeleteTx = (tx: GoalTransaction) => {
+        Alert.alert(
+            "Hapus Transaksi",
+            "Apakah Anda yakin ingin menghapus transaksi ini?",
+            [
+                { text: "Batal", style: "cancel" },
+                {
+                    text: "Hapus",
+                    style: "destructive",
+                    onPress: async () => {
+                        await useAppStore.getState().deleteGoalTransaction(tx.id);
+
+                        // Reload history
+                        if (selectedGoal) {
+                            setHistoryTransactions([]);
+                            setHistoryOffset(0);
+                            setHistoryHasMore(true);
+                            setTimeout(() => handleOpenHistory(selectedGoal), 100);
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const renderHistoryItem = useCallback(
         ({ item: tx }: { item: GoalTransaction }) => {
             const wallet = wallets.find((w) => w.id === tx.wallet_id);
             return (
-                <XStack
-                    justify="space-between"
-                    items="center"
-                    p="$3"
-                    bg={inputBg}
-                    style={{ borderRadius: 12 }}
-                    mb="$3"
+                <Swipeable
+                    renderRightActions={(progress, dragX) => {
+                        const scale = dragX.interpolate({
+                            inputRange: [-100, 0],
+                            outputRange: [1, 0],
+                            extrapolate: "clamp",
+                        });
+                        return (
+                            <RNView style={styles.swipeActions}>
+                                <TouchableOpacity
+                                    style={[styles.swipeBtn, styles.editBtn]}
+                                    onPress={() => handleEditTx(tx)}
+                                >
+                                    <Animated.View style={{ transform: [{ scale }] }}>
+                                        <Edit2 size={20} color="white" />
+                                    </Animated.View>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.swipeBtn, styles.deleteBtn]}
+                                    onPress={() => handleDeleteTx(tx)}
+                                >
+                                    <Animated.View style={{ transform: [{ scale }] }}>
+                                        <Trash2 size={20} color="white" />
+                                    </Animated.View>
+                                </TouchableOpacity>
+                            </RNView>
+                        );
+                    }}
                 >
-                    <XStack gap="$3" items="center">
-                        <RNView
-                            style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 20,
-                                backgroundColor: tx.type === "topup" ? "#D1FAE5" : "#FEE2E2",
-                                justifyContent: "center",
-                                alignItems: "center",
-                            }}
-                        >
-                            {tx.type === "topup" ? (
-                                <ArrowUp size={20} color="#10B981" />
-                            ) : (
-                                <ArrowDown size={20} color="#EF4444" />
-                            )}
-                        </RNView>
-                        <YStack>
-                            <Text fontWeight="600" color={textColor}>
-                                {tx.type === "topup" ? "Topup" : "Penarikan"}
-                            </Text>
-                            {wallet && (
-                                <Text fontSize={12} color={subtextColor}>
-                                    {tx.type === "topup" ? "Dari" : "Ke"} {wallet.name}
-                                </Text>
-                            )}
-                            <Text fontSize={11} color={subtextColor}>
-                                {new Date(tx.created_at).toLocaleDateString("id-ID", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                })}
-                            </Text>
-                            {tx.note && (
-                                <Text fontSize={11} color={subtextColor} mt="$1">
-                                    "{tx.note}"
-                                </Text>
-                            )}
-                        </YStack>
-                    </XStack>
-                    <Text
-                        fontWeight="bold"
-                        color={tx.type === "topup" ? "#10B981" : "#EF4444"}
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => handleEditTx(tx)}
                     >
-                        {tx.type === "topup" ? "+" : "-"}
-                        {formatRupiah(tx.amount)}
-                    </Text>
-                </XStack>
+                        <XStack
+                            justify="space-between"
+                            items="center"
+                            p="$3"
+                            bg={inputBg}
+                            style={{ borderRadius: 12 }}
+                            mb="$3"
+                        >
+                            <XStack gap="$3" items="center">
+                                <RNView
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 20,
+                                        backgroundColor:
+                                            tx.type === "topup" ? "#D1FAE5" : "#FEE2E2",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    {tx.type === "topup" ? (
+                                        <ArrowUp size={20} color="#10B981" />
+                                    ) : (
+                                        <ArrowDown size={20} color="#EF4444" />
+                                    )}
+                                </RNView>
+                                <YStack>
+                                    <Text fontWeight="600" color={textColor}>
+                                        {tx.type === "topup" ? "Topup" : "Penarikan"}
+                                    </Text>
+                                    {wallet && (
+                                        <Text fontSize={12} color={subtextColor}>
+                                            {tx.type === "topup" ? "Dari" : "Ke"} {wallet.name}
+                                        </Text>
+                                    )}
+                                    <Text fontSize={11} color={subtextColor}>
+                                        {new Date(tx.created_at).toLocaleDateString("id-ID", {
+                                            day: "numeric",
+                                            month: "short",
+                                            year: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </Text>
+                                    {tx.note && (
+                                        <Text fontSize={11} color={subtextColor} mt="$1">
+                                            "{tx.note}"
+                                        </Text>
+                                    )}
+                                </YStack>
+                            </XStack>
+                            <Text
+                                fontWeight="bold"
+                                color={tx.type === "topup" ? "#10B981" : "#EF4444"}
+                            >
+                                {tx.type === "topup" ? "+" : "-"}
+                                {formatRupiah(tx.amount)}
+                            </Text>
+                        </XStack>
+                    </TouchableOpacity>
+                </Swipeable>
             );
         },
         [inputBg, textColor, subtextColor, wallets],
@@ -273,19 +350,21 @@ export default function GoalsScreen() {
             <YStack pt={insets.top + 10} px="$4" pb="$4">
                 <XStack justify="space-between" items="center">
                     <Text fontSize={20} fontWeight="bold" color={textColor}>
-                        Target Tabungan
+                        {t("goals.my_goals")}
                     </Text>
-                    <Button
-                        size="$3"
-                        bg="#10B981"
-                        pressStyle={{ opacity: 0.8 }}
-                        onPress={() => addSheetRef.current?.expand()}
-                    >
-                        <Plus size={16} color="white" />
-                        <Text color="white" fontSize={13} fontWeight="600">
-                            Tambah
-                        </Text>
-                    </Button>
+                    <Link href="/(tabs)/add" asChild>
+                        <TouchableOpacity>
+                            <Button
+                                size="$3"
+                                bg="#10B981"
+                                color="white"
+                                pressStyle={{ opacity: 0.8 }}
+                                icon={<Plus size={16} />}
+                            >
+                                {t("goals.add_goal")}
+                            </Button>
+                        </TouchableOpacity>
+                    </Link>
                 </XStack>
             </YStack>
 
@@ -386,12 +465,14 @@ export default function GoalsScreen() {
 
                                 <XStack justify="space-between" mt="$2" mb="$3">
                                     <Text fontSize={12} color={subtextColor}>
-                                        {formatRupiah(goal.current_amount)} /{" "}
+                                        {formatRupiah(goal.current_amount || 0)} /{" "}
                                         {formatRupiah(goal.target_amount)}
                                     </Text>
                                     <Text fontSize={12} color={subtextColor}>
                                         Sisa:{" "}
-                                        {formatRupiah(goal.target_amount - goal.current_amount)}
+                                        {formatRupiah(
+                                            goal.target_amount - (goal.current_amount || 0),
+                                        )}
                                     </Text>
                                 </XStack>
 
@@ -619,10 +700,10 @@ export default function GoalsScreen() {
                     onEndReachedThreshold={0.5}
                     ListHeaderComponent={
                         <YStack mb="$4">
-                            <XStack gap="$2" items="center" mb="$1">
-                                <HistoryIcon size={20} color={textColor} />
-                                <Text fontSize={18} fontWeight="bold" color={textColor}>
-                                    Riwayat Transaksi
+                            <XStack gap="$2" items="center">
+                                <Target size={14} color={subtextColor} />
+                                <Text fontSize={12} color={subtextColor}>
+                                    {t("goals.target")}
                                 </Text>
                             </XStack>
                             <Text fontSize={14} color={subtextColor}>
@@ -640,6 +721,21 @@ export default function GoalsScreen() {
                     }
                 />
             </BottomSheet>
+
+            <EditGoalTransactionSheet
+                ref={editTxSheetRef}
+                transaction={selectedTx}
+                onClose={() => {
+                    editTxSheetRef.current?.dismiss();
+                    setSelectedTx(null);
+                    if (selectedGoal) {
+                        setHistoryTransactions([]);
+                        setHistoryOffset(0);
+                        setHistoryHasMore(true);
+                        setTimeout(() => handleOpenHistory(selectedGoal), 100);
+                    }
+                }}
+            />
         </YStack>
     );
 }
@@ -676,5 +772,25 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         padding: 0,
+    },
+    swipeActions: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 12,
+        height: "100%",
+    },
+    swipeBtn: {
+        width: 60,
+        height: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 12,
+        marginLeft: 8,
+    },
+    editBtn: {
+        backgroundColor: "#3B82F6",
+    },
+    deleteBtn: {
+        backgroundColor: "#EF4444",
     },
 });

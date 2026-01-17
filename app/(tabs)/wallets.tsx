@@ -7,6 +7,7 @@ import { IconPicker, TransactionFilters, WalletPicker } from "@/components";
 import type { Wallet } from "@/db";
 import { Transaction } from "@/db";
 import { TransactionItem } from "@/features/dashboard";
+import { EditTransactionSheet } from "@/features/transactions/components/EditTransactionSheet";
 import { useAppStore, useThemeStore } from "@/store";
 import {
     FilterType,
@@ -18,11 +19,13 @@ import {
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetFlatList,
+    BottomSheetModal,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeftRight, Edit2, Plus, Trash2 } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     Alert,
@@ -38,6 +41,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Spinner, Text, XStack, YStack } from "tamagui";
 
 export default function WalletsScreen() {
+    const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const themeMode = useThemeStore((state) => state.mode);
     const {
@@ -62,7 +66,8 @@ export default function WalletsScreen() {
     const addSheetRef = useRef<BottomSheet>(null);
     const editSheetRef = useRef<BottomSheet>(null);
     const transferSheetRef = useRef<BottomSheet>(null);
-    const historySheetRef = useRef<BottomSheet>(null); // Added
+    const historySheetRef = useRef<BottomSheet>(null);
+    const editTxSheetRef = useRef<BottomSheetModal>(null); // Added
     const snapPoints = useMemo(() => ["70%", "90%"], []);
 
     // Add wallet form state
@@ -92,6 +97,7 @@ export default function WalletsScreen() {
     const [historyOffset, setHistoryOffset] = useState(0);
     const [historyHasMore, setHistoryHasMore] = useState(true);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [selectedTx, setSelectedTx] = useState<Transaction | null>(null); // Added
 
     // History Filters
     const [historyFilter, setHistoryFilter] = useState<FilterType>("all");
@@ -281,6 +287,36 @@ export default function WalletsScreen() {
         }
     };
 
+    const handleHistoryEdit = (tx: Transaction) => {
+        setSelectedTx(tx);
+        editTxSheetRef.current?.present();
+    };
+
+    const handleHistoryDelete = (tx: Transaction) => {
+        Alert.alert(
+            "Hapus Transaksi",
+            "Apakah Anda yakin ingin menghapus transaksi ini?",
+            [
+                { text: "Batal", style: "cancel" },
+                {
+                    text: "Hapus",
+                    style: "destructive",
+                    onPress: async () => {
+                        // Optimistic update or reload?
+                        // We reload history
+                        await useAppStore.getState().deleteTransaction(tx.id);
+                        if (selectedHistoryWallet) {
+                            // Reset and reload
+                            setHistoryTransactions([]);
+                            setHistoryOffset(0);
+                            loadWalletHistory(selectedHistoryWallet.id, true);
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const renderBackdrop = useCallback(
         (props: any) => (
             <BottomSheetBackdrop
@@ -306,7 +342,7 @@ export default function WalletsScreen() {
             <YStack pt={insets.top + 10} px="$4" pb="$4">
                 <XStack justify="space-between" items="center">
                     <Text fontSize={20} fontWeight="bold" color={textColor}>
-                        Dompet Saya
+                        {t("wallets.my_wallets")}
                     </Text>
                     <Button
                         size="$3"
@@ -316,7 +352,7 @@ export default function WalletsScreen() {
                     >
                         <Plus size={16} color="white" />
                         <Text color="white" fontSize={13} fontWeight="600">
-                            Tambah
+                            {t("wallets.add_wallet")}
                         </Text>
                     </Button>
                 </XStack>
@@ -336,7 +372,7 @@ export default function WalletsScreen() {
                             style={styles.netWorthGradient}
                         >
                             <Text color="rgba(255,255,255,0.8)" fontSize={12}>
-                                Total Kekayaan Bersih
+                                {t("wallets.total_net_worth")}
                             </Text>
                             <Text color="white" fontSize={28} fontWeight="bold">
                                 {formatRupiah(netWorth)}
@@ -360,7 +396,7 @@ export default function WalletsScreen() {
                     >
                         <ArrowLeftRight size={16} color={subtextColor} />
                         <Text color={subtextColor} fontWeight="600">
-                            Transfer Antar Wallet
+                            {t("wallets.transfer_between_wallets")}
                         </Text>
                     </Button>
 
@@ -386,7 +422,7 @@ export default function WalletsScreen() {
                                                 <Edit2 size={20} color="white" />
                                             </Animated.View>
                                             <Text color="white" fontSize={11} mt="$1">
-                                                Edit
+                                                {t("common.edit")}
                                             </Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
@@ -698,7 +734,11 @@ export default function WalletsScreen() {
                         keyExtractor={(item: Transaction) => item.id}
                         renderItem={({ item }: { item: Transaction }) => (
                             <RNView style={{ marginBottom: 12 }}>
-                                <TransactionItem transaction={item} />
+                                <TransactionItem
+                                    transaction={item}
+                                    onPress={() => handleHistoryEdit(item)}
+                                    onDelete={() => handleHistoryDelete(item)}
+                                />
                             </RNView>
                         )}
                         onEndReached={handleLoadMoreHistory}
@@ -726,6 +766,20 @@ export default function WalletsScreen() {
                     />
                 </YStack>
             </BottomSheet>
+
+            <EditTransactionSheet
+                ref={editTxSheetRef}
+                transaction={selectedTx}
+                onClose={() => {
+                    editTxSheetRef.current?.dismiss();
+                    setSelectedTx(null);
+                    if (selectedHistoryWallet) {
+                        setHistoryTransactions([]);
+                        setHistoryOffset(0);
+                        loadWalletHistory(selectedHistoryWallet.id, true);
+                    }
+                }}
+            />
         </YStack>
     );
 }

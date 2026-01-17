@@ -3,25 +3,35 @@ import { Transaction } from "@/db"; // Removed unused import if needed, but keep
 import { TransactionItem } from "@/features/dashboard";
 import { useAppStore, useThemeStore } from "@/store";
 import { FilterType, getFilterDateRange } from "@/utils"; // Added
-import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 // Modified imports
-import { useEffect, useState } from "react";
+import { EditTransactionSheet } from "@/features/transactions/components/EditTransactionSheet";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     RefreshControl,
     TouchableOpacity,
     View,
 } from "react-native";
-import { Text, XStack, YStack } from "tamagui";
+import { Input, Text, XStack, YStack } from "tamagui";
 
 // Removed local FilterType definition
 
+import { ArrowLeft, Search } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+// import { Button, Input } from "tamagui"; // Removed duplicate imports, already in tamagui import below or need to be merged
+
 export default function TransactionsScreen() {
+    const { t } = useTranslation(); // Hook
     const router = useRouter();
     const themeMode = useThemeStore((state) => state.mode);
-    const { getTransactions } = useAppStore();
+    const { getTransactions, deleteTransaction } = useAppStore();
+    const bottomSheetRef = useRef<BottomSheetModal>(null);
+    const [selectedTransaction, setSelectedTransaction] =
+        useState<Transaction | null>(null);
 
     const isDark = themeMode === "dark";
     const bgColor = isDark ? "#0F0F0F" : "#F9FAFB";
@@ -32,6 +42,7 @@ export default function TransactionsScreen() {
 
     const [filter, setFilter] = useState<FilterType>("all");
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [searchQuery, setSearchQuery] = useState(""); // Restore searchQuery
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -99,6 +110,29 @@ export default function TransactionsScreen() {
         loadTransactions(true);
     };
 
+    const handleEdit = (tx: Transaction) => {
+        setSelectedTransaction(tx);
+        bottomSheetRef.current?.present();
+    };
+
+    const handleDelete = (tx: Transaction) => {
+        Alert.alert(
+            "Hapus Transaksi",
+            "Apakah Anda yakin ingin menghapus transaksi ini?",
+            [
+                { text: "Batal", style: "cancel" },
+                {
+                    text: "Hapus",
+                    style: "destructive",
+                    onPress: async () => {
+                        await deleteTransaction(tx.id);
+                        loadTransactions(true);
+                    },
+                },
+            ],
+        );
+    };
+
     // Effect to reload when custom dates change
     useEffect(() => {
         if (filter === "custom") {
@@ -108,6 +142,13 @@ export default function TransactionsScreen() {
         }
     }, [customStartDate, customEndDate]);
 
+    // Effect to reload when search query changes
+    useEffect(() => {
+        setOffset(0);
+        setHasMore(true);
+        loadTransactions(true);
+    }, [searchQuery]);
+
     // Removed renderFilterChip
 
     return (
@@ -116,12 +157,21 @@ export default function TransactionsScreen() {
 
             {/* Header */}
             <XStack items="center" px="$4" pb="$4" gap="$3">
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color={textColor} />
-                </TouchableOpacity>
-                <Text fontSize={20} fontWeight="bold" color={textColor}>
-                    Riwayat Transaksi
-                </Text>
+                <XStack items="center" gap="$3">
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{
+                            padding: 8,
+                            borderRadius: 16,
+                            backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "white",
+                        }}
+                    >
+                        <ArrowLeft size={24} color={textColor} />
+                    </TouchableOpacity>
+                    <Text fontSize={20} fontWeight="bold" color={textColor}>
+                        {t("tabs.transactions")}
+                    </Text>
+                </XStack>
             </XStack>
 
             {/* Filters */}
@@ -133,6 +183,34 @@ export default function TransactionsScreen() {
                     onCustomStartDateChange={setCustomStartDate}
                     customEndDate={customEndDate}
                     onCustomEndDateChange={setCustomEndDate}
+                />
+            </View>
+
+            {/* Search Bar */}
+            <View
+                style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: cardBg,
+                    marginHorizontal: 16,
+                    marginTop: 12,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 16,
+                    borderColor: borderColor,
+                    borderWidth: 1,
+                }}
+            >
+                <Search size={20} color={subtextColor} />
+                <Input
+                    flex={1}
+                    placeholder={t("transactions.search_placeholder")}
+                    bg="transparent"
+                    borderWidth={0}
+                    color={textColor}
+                    placeholderTextColor={subtextColor}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
                 />
             </View>
 
@@ -149,10 +227,14 @@ export default function TransactionsScreen() {
                             borderRadius: 12,
                         }}
                     >
-                        <TransactionItem transaction={item} />
+                        <TransactionItem
+                            transaction={item}
+                            onPress={() => handleEdit(item)}
+                            onDelete={() => handleDelete(item)}
+                        />
                     </View>
                 )}
-                contentContainerStyle={{ paddingBottom: 50 }}
+                contentContainerStyle={{ paddingBottom: 50, paddingTop: 16 }}
                 onEndReached={() => loadTransactions(false)}
                 onEndReachedThreshold={0.5}
                 refreshControl={
@@ -177,6 +259,17 @@ export default function TransactionsScreen() {
                         </YStack>
                     ) : null
                 }
+            />
+            <View />
+
+            <EditTransactionSheet
+                ref={bottomSheetRef}
+                transaction={selectedTransaction}
+                onClose={() => {
+                    bottomSheetRef.current?.dismiss();
+                    setSelectedTransaction(null);
+                    loadTransactions(true);
+                }}
             />
         </YStack>
     );

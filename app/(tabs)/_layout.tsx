@@ -1,9 +1,12 @@
+import "@/i18n"; // Initialize i18n
 import { useThemeStore } from "@/store";
 import { Tabs } from "expo-router";
 import { FileText, Home, Plus, Target, Wallet } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 export default function TabLayout() {
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
 
     const isDark = themeMode === "dark";
@@ -34,7 +37,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "Home",
+                    title: t("tabs.homes"),
                     tabBarIcon: ({ color, focused }) => (
                         <Home size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
                     ),
@@ -43,7 +46,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="goals"
                 options={{
-                    title: "Goals",
+                    title: t("tabs.goals"),
                     tabBarIcon: ({ color, focused }) => (
                         <Target size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
                     ),
@@ -52,7 +55,8 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="add"
                 options={{
-                    title: "",
+                    title: t("tabs.add"),
+                    tabBarLabel: "",
                     tabBarIcon: () => (
                         <View
                             style={{
@@ -78,7 +82,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="wallets"
                 options={{
-                    title: "Wallet",
+                    title: t("tabs.wallets"),
                     tabBarIcon: ({ color, focused }) => (
                         <Wallet size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
                     ),
@@ -87,7 +91,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="reports"
                 options={{
-                    title: "Report",
+                    title: t("tabs.reports"),
                     tabBarIcon: ({ color, focused }) => (
                         <FileText size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
                     ),

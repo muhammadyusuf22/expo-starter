@@ -1,0 +1,56 @@
+{
+    "tabs": {
+        "homes": "Homes",
+        "wallets": "Wallets",
+        "transactions": "Transactions",
+        "add": "Add",
+        "goals": "Goals",
+        "reports": "Reports",
+        "settings": "Settings"
+    },
+    "wallets": {
+        "total_balance": "Total Balance",
+        "my_wallets": "My Wallets",
+        "add_wallet": "Add Wallet",
+        "edit_wallet": "Edit Wallet",
+        "transfer": "Transfer"
+    },
+    "transactions": {
+        "recent": "Recent Transactions",
+        "see_all": "See All",
+        "income": "Income",
+        "expense": "Expense",
+        "no_transactions": "No transactions yet"
+    },
+    "goals": {
+        "my_goals": "My Goals",
+        "add_goal": "Add Goal",
+        "target": "Target",
+        "saved": "Saved",
+        "deadline": "Deadline"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "theme": "Theme",
+        "about": "About",
+        "version": "Version"
+    },
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "back": "Back"
+    },
+    "form": {
+        "amount": "Amount",
+        "category": "Category",
+        "date": "Date",
+        "note": "Note",
+        "wallet": "Wallet",
+        "optional": "Optional",
+        "select_wallet": "Select Wallet",
+        "select_category": "Select Category"
+    }
+}

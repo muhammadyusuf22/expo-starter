@@ -1,5 +1,6 @@
 import { initializeDatabase } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -51,13 +52,15 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TamaguiProvider config={config} defaultTheme={themeMode}>
-        <Theme name={themeMode}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
-        </Theme>
+        <BottomSheetModalProvider>
+          <Theme name={themeMode}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style={themeMode === "dark" ? "light" : "dark"} />
+          </Theme>
+        </BottomSheetModalProvider>
       </TamaguiProvider>
     </GestureHandlerRootView>
   );

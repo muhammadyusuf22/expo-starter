@@ -2,8 +2,19 @@
  * Main App Store - Transactions, Goals, Wallets, Budgets
  */
 
+import {
+  GOAL_TYPES,
+  SYSTEM_CATEGORIES,
+  TRANSACTION_TYPES,
+} from "@/constants/app";
 import type { Budget, Goal, GoalTransaction, Transaction, Wallet } from "@/db";
 import { generateId, getCurrentTimestamp, getDatabase } from "@/db";
+import {
+  GoalRepository,
+  GoalTransactionRepository,
+} from "@/repositories/goal.repository";
+import { TransactionRepository } from "@/repositories/transaction.repository";
+import { WalletRepository } from "@/repositories/wallet.repository";
 import { isCurrentMonth } from "@/utils";
 import { create } from "zustand";
 
@@ -102,6 +113,11 @@ interface AppState {
     limit?: number,
     offset?: number,
   ) => Promise<GoalTransaction[]>;
+  updateGoalTransaction: (
+    id: string,
+    updates: Partial<GoalTransaction>,
+  ) => Promise<void>;
+  deleteGoalTransaction: (id: string) => Promise<void>;
 }
 
 // Category colors for chart
@@ -113,6 +129,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Hiburan: "#EC4899",
   Kesehatan: "#06B6D4",
   Tabungan: "#6366F1",
+  "Saldo Awal": "#0F766E",
   Lainnya: "#6B7280",
 };
 
@@ -218,31 +235,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   // TRANSACTIONS
   // =====================
   loadTransactions: async () => {
-    const db = await getDatabase();
-    const rows = await db.getAllAsync<Transaction>(
-      "SELECT * FROM transactions ORDER BY date DESC, created_at DESC",
-    );
+    const rows = await TransactionRepository.getAll();
     set({ transactions: rows });
   },
 
   addTransaction: async (tx) => {
-    const db = await getDatabase();
     const id = generateId("TRX");
     const created_at = getCurrentTimestamp();
 
-    await db.runAsync(
-      "INSERT INTO transactions (id, date, type, category, amount, note, wallet_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        id,
-        tx.date,
-        tx.type,
-        tx.category,
-        tx.amount,
-        tx.note || null,
-        tx.wallet_id || null,
-        created_at,
-      ],
-    );
+    await TransactionRepository.create({
+      id,
+      date: tx.date,
+      type: tx.type,
+      category: tx.category,
+      amount: tx.amount,
+      note: tx.note || null,
+      wallet_id: tx.wallet_id || null, // Ensure wallet_id is handled
+      created_at,
+    });
 
     await get().loadTransactions();
     await get().loadWallets(); // Reload wallets to update balance
@@ -251,16 +261,40 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateTransaction: async (id, updates) => {
-    const db = await getDatabase();
-    const fields = Object.keys(updates)
-      .map((k) => `${k} = ?`)
-      .join(", ");
-    const values = Object.values(updates);
+    // 1. Check for Goal Link to sync Amount/Note changes
+    const tx = await TransactionRepository.findById(id);
+    if (
+      tx &&
+      (tx.category === SYSTEM_CATEGORIES.SAVINGS ||
+        tx.category === SYSTEM_CATEGORIES.SAVINGS_WITHDRAWAL)
+    ) {
+      // Find by ID match or legacy
+      let gtx = await GoalTransactionRepository.findByTransactionId(id);
+      if (!gtx) {
+        const typeToCheck =
+          tx.category === SYSTEM_CATEGORIES.SAVINGS
+            ? GOAL_TYPES.TOPUP
+            : GOAL_TYPES.WITHDRAW;
+        gtx = await GoalTransactionRepository.findByFuzzy(
+          tx.wallet_id || "",
+          typeToCheck,
+          tx.created_at,
+        );
+      }
 
-    await db.runAsync(`UPDATE transactions SET ${fields} WHERE id = ?`, [
-      ...values,
-      id,
-    ]);
+      if (gtx) {
+        // Sync Goal System
+        const goalUpdates: Partial<GoalTransaction> = {};
+        if (updates.amount !== undefined) goalUpdates.amount = updates.amount;
+        if (updates.note !== undefined) goalUpdates.note = updates.note;
+
+        if (Object.keys(goalUpdates).length > 0) {
+          await get().updateGoalTransaction(gtx.id, goalUpdates);
+        }
+      }
+    }
+
+    await TransactionRepository.update(id, updates);
 
     await get().loadTransactions();
     await get().loadWallets(); // Reload wallets to update balance
@@ -268,43 +302,58 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteTransaction: async (id) => {
-    const db = await getDatabase();
-    await db.runAsync("DELETE FROM transactions WHERE id = ?", [id]);
+    // 1. Get transaction details first
+    const tx = await TransactionRepository.findById(id);
+    if (!tx) return;
+
+    // 2. Check if it's a Goal Topup or Withdraw to update Goal balance/history
+    if (
+      tx.category === SYSTEM_CATEGORIES.SAVINGS ||
+      tx.category === SYSTEM_CATEGORIES.SAVINGS_WITHDRAWAL
+    ) {
+      // Try finding by transaction_id first
+      let goalTx = await GoalTransactionRepository.findByTransactionId(id);
+
+      if (!goalTx) {
+        // Fallback legacy fuzzy match
+        const isTopup = tx.category === SYSTEM_CATEGORIES.SAVINGS;
+        const typeToCheck = isTopup ? GOAL_TYPES.TOPUP : GOAL_TYPES.WITHDRAW;
+        goalTx = await GoalTransactionRepository.findByFuzzy(
+          tx.wallet_id || "",
+          typeToCheck,
+          tx.created_at,
+        );
+      }
+
+      if (goalTx) {
+        // DELEGATE to deleteGoalTransaction
+        await get().deleteGoalTransaction(goalTx.id);
+
+        // deleteGoalTransaction reloads goals/wallets but not dashboard/transactions
+        await get().loadTransactions();
+        await get().loadDashboard();
+        return;
+      }
+    }
+
+    // 3. Delete the transaction
+    await TransactionRepository.delete(id);
+
+    // 4. Reload everything
     await get().loadTransactions();
-    await get().loadWallets(); // Reload wallets to update balance
+    await get().loadWallets();
     await get().loadDashboard();
   },
 
   getTransactions: async (limit = 20, offset = 0, filters) => {
-    const db = await getDatabase();
-    let query = "SELECT * FROM transactions WHERE 1=1";
-    const params: any[] = [];
-
-    if (filters?.startDate && filters?.endDate) {
-      query += " AND date BETWEEN ? AND ?";
-      params.push(filters.startDate, filters.endDate);
-    }
-
-    if (filters?.walletId) {
-      query += " AND wallet_id = ?";
-      params.push(filters.walletId);
-    }
-
-    query += " ORDER BY date DESC, created_at DESC LIMIT ? OFFSET ?";
-    params.push(limit, offset);
-
-    const rows = await db.getAllAsync<Transaction>(query, params);
-    return rows;
+    return TransactionRepository.findAll(limit, offset, filters);
   },
 
   // =====================
   // GOALS
   // =====================
   loadGoals: async () => {
-    const db = await getDatabase();
-    const rows = await db.getAllAsync<Goal>(
-      "SELECT * FROM goals ORDER BY created_at DESC",
-    );
+    const rows = await GoalRepository.findAll();
 
     // Calculate percentage and days remaining
     const goalsWithComputed = rows.map((g) => ({
@@ -312,7 +361,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       percentage:
         g.target_amount > 0
           ? Math.min(
-              Math.round((g.current_amount / g.target_amount) * 100),
+              Math.round(((g.current_amount || 0) / g.target_amount) * 100),
               100,
             )
           : 0,
@@ -328,208 +377,209 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   addGoal: async (goal) => {
-    const db = await getDatabase();
     const id = generateId("GOAL");
     const created_at = getCurrentTimestamp();
 
-    await db.runAsync(
-      "INSERT INTO goals (id, name, target_amount, current_amount, deadline, icon, color, created_at) VALUES (?, ?, ?, 0, ?, ?, ?, ?)",
-      [
-        id,
-        goal.name,
-        goal.target_amount,
-        goal.deadline || null,
-        goal.icon || "🎯",
-        goal.color || "#10B981",
-        created_at,
-      ],
-    );
+    await GoalRepository.create({
+      id,
+      name: goal.name,
+      target_amount: goal.target_amount,
+      current_amount: 0,
+      deadline: goal.deadline || null,
+      icon: goal.icon || "🎯",
+      color: goal.color || "#10B981",
+      created_at,
+    });
 
     await get().loadGoals();
     return id;
   },
 
   updateGoal: async (id, updates) => {
-    const db = await getDatabase();
-    const fields = Object.keys(updates)
-      .map((k) => `${k} = ?`)
-      .join(", ");
-    const values = Object.values(updates);
-
-    await db.runAsync(`UPDATE goals SET ${fields} WHERE id = ?`, [
-      ...values,
-      id,
-    ]);
-
+    await GoalRepository.update(id, updates);
     await get().loadGoals();
   },
 
   deleteGoal: async (id) => {
-    const db = await getDatabase();
-    await db.runAsync("DELETE FROM goal_transactions WHERE goal_id = ?", [id]);
-    await db.runAsync("DELETE FROM goals WHERE id = ?", [id]);
+    await GoalTransactionRepository.deleteByGoalId(id);
+    await GoalRepository.delete(id);
     await get().loadGoals();
   },
 
   topupGoal: async (goalId, amount, note, walletId) => {
-    const db = await getDatabase();
     const goal = get().goals.find((g) => g.id === goalId);
     if (!goal) return;
 
-    // Update goal current_amount
-    const newAmount = goal.current_amount + amount;
-    await db.runAsync("UPDATE goals SET current_amount = ? WHERE id = ?", [
-      newAmount,
-      goalId,
-    ]);
-
-    // Log goal transaction
-    const txId = generateId("GTX");
-    await db.runAsync(
-      "INSERT INTO goal_transactions (id, goal_id, type, amount, note, wallet_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        txId,
-        goalId,
-        "topup",
-        amount,
-        note || "Topup",
-        walletId,
-        getCurrentTimestamp(),
-      ],
-    );
-
-    // If wallet specified, create expense transaction
+    // 1. Create Wallet Transaction first if walletId provided
+    let transactionId: string | null = null;
     if (walletId) {
-      await get().addTransaction({
+      transactionId = await get().addTransaction({
         date: getCurrentTimestamp().split("T")[0],
-        type: "expense",
-        category: "Tabungan",
+        type: TRANSACTION_TYPES.EXPENSE,
+        category: SYSTEM_CATEGORIES.SAVINGS,
         amount,
         note: `Topup Goal: ${goal.name}`,
         wallet_id: walletId,
       });
     }
 
+    // 2. Goal Balance is computed automatically, no update needed
+
+    // 3. Log goal transaction with transaction_id
+    const txId = generateId("GTX");
+    await GoalTransactionRepository.create({
+      id: txId,
+      goal_id: goalId,
+      type: GOAL_TYPES.TOPUP,
+      amount: amount,
+      note: note || "Topup",
+      wallet_id: walletId || null,
+      created_at: getCurrentTimestamp(),
+      transaction_id: transactionId,
+    });
+
     await get().loadGoals();
   },
 
   withdrawGoal: async (goalId, amount, note, walletId) => {
-    const db = await getDatabase();
     const goal = get().goals.find((g) => g.id === goalId);
-    if (!goal || amount > goal.current_amount) return;
+    if (!goal) return;
+    const currentAmount = goal.current_amount || 0;
 
-    // Update goal current_amount
-    const newAmount = goal.current_amount - amount;
-    await db.runAsync("UPDATE goals SET current_amount = ? WHERE id = ?", [
-      newAmount,
-      goalId,
-    ]);
+    if (amount > currentAmount) {
+      return;
+    }
 
-    // Log goal transaction
-    const txId = generateId("GTX");
-    await db.runAsync(
-      "INSERT INTO goal_transactions (id, goal_id, type, amount, note, wallet_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        txId,
-        goalId,
-        "withdraw",
-        amount,
-        note || "Withdraw",
-        walletId,
-        getCurrentTimestamp(),
-      ],
-    );
-
-    // If wallet specified, create income transaction
+    // 1. Create Wallet Transaction first if walletId provided
+    let transactionId: string | null = null;
     if (walletId) {
-      await get().addTransaction({
+      transactionId = await get().addTransaction({
         date: getCurrentTimestamp().split("T")[0],
-        type: "income",
-        category: "Pencairan Tabungan",
+        type: TRANSACTION_TYPES.INCOME,
+        category: SYSTEM_CATEGORIES.SAVINGS_WITHDRAWAL,
         amount,
         note: `Withdraw Goal: ${goal.name}`,
         wallet_id: walletId,
       });
     }
 
+    // 2. Goal Balance Computed Automatically
+
+    // 3. Log goal transaction
+    const txId = generateId("GTX");
+    await GoalTransactionRepository.create({
+      id: txId,
+      goal_id: goalId,
+      type: GOAL_TYPES.WITHDRAW,
+      amount: amount,
+      note: note || "Withdraw",
+      wallet_id: walletId || null,
+      created_at: getCurrentTimestamp(),
+      transaction_id: transactionId,
+    });
+
     await get().loadGoals();
   },
 
   getGoalTransactions: async (goalId, limit = 20, offset = 0) => {
-    const db = await getDatabase();
-    const rows = await db.getAllAsync<GoalTransaction>(
-      "SELECT * FROM goal_transactions WHERE goal_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
-      [goalId, limit, offset],
-    );
-    return rows;
+    return GoalTransactionRepository.findByGoalId(goalId, limit, offset);
+  },
+
+  updateGoalTransaction: async (id, updates) => {
+    const gtx = await GoalTransactionRepository.findById(id);
+    if (!gtx) return;
+
+    // 1. Handle Amount Change
+    // Balance is computed automatically. We only need to sync linked Wallet Transaction.
+    if (updates.amount !== undefined && updates.amount !== gtx.amount) {
+      // Update linked wallet transaction
+      let linkedTx: Transaction | null = null;
+      if (gtx.transaction_id) {
+        linkedTx = await TransactionRepository.findById(gtx.transaction_id);
+      }
+
+      if (linkedTx) {
+        await TransactionRepository.update(linkedTx.id, {
+          amount: updates.amount,
+        });
+      }
+    }
+
+    // 2. Update Note in linked transaction
+    if (updates.note !== undefined && updates.note !== gtx.note) {
+      if (gtx.transaction_id) {
+        await TransactionRepository.update(gtx.transaction_id, {
+          note: updates.note,
+        });
+      }
+    }
+
+    // 3. Update the GT itself
+    await GoalTransactionRepository.update(id, updates);
+
+    await get().loadGoals();
+    await get().loadWallets();
+  },
+
+  deleteGoalTransaction: async (id) => {
+    const gtx = await GoalTransactionRepository.findById(id);
+    if (!gtx) return;
+
+    // 1. Goal Balance Reverts Automatically (Computed)
+
+    // 2. Delete linked wallet transaction
+    if (gtx.transaction_id) {
+      await TransactionRepository.delete(gtx.transaction_id);
+    }
+    // Legacy fallback for deletion?
+    // Again, assuming migration.
+
+    // 3. Delete GT
+    await GoalTransactionRepository.delete(id);
+
+    await get().loadGoals();
+    await get().loadWallets();
   },
 
   // =====================
   // WALLETS
   // =====================
   loadWallets: async () => {
-    const db = await getDatabase();
-    const wallets = await db.getAllAsync<Wallet>("SELECT * FROM wallets");
-    const transactions = await db.getAllAsync<Transaction>(
-      "SELECT * FROM transactions",
-    );
-
-    // Calculate current balance for each wallet
-    const walletBalances: Record<string, number> = {};
-    transactions.forEach((tx) => {
-      const wId = tx.wallet_id || "WALLET-CASH";
-      walletBalances[wId] = walletBalances[wId] || 0;
-      if (tx.type === "income") {
-        walletBalances[wId] += tx.amount;
-      } else {
-        walletBalances[wId] -= tx.amount;
-      }
-    });
-
-    const walletsWithBalance = wallets.map((w) => ({
-      ...w,
-      current_balance: w.initial_balance + (walletBalances[w.id] || 0),
-    }));
-
-    set({ wallets: walletsWithBalance });
+    const wallets = await WalletRepository.findAll();
+    // Balances are now computed in SQL (WalletRepository)
+    set({ wallets });
   },
 
   addWallet: async (wallet) => {
-    const db = await getDatabase();
     const id = generateId("WALLET");
+    const created_at = getCurrentTimestamp();
 
-    await db.runAsync(
-      "INSERT INTO wallets (id, name, type, initial_balance, icon, color) VALUES (?, ?, ?, ?, ?, ?)",
-      [
-        id,
-        wallet.name,
-        wallet.type,
-        wallet.initial_balance,
-        wallet.icon || "💰",
-        wallet.color || "#10B981",
-      ],
-    );
+    await WalletRepository.create({
+      id,
+      name: wallet.name,
+      type: wallet.type, // Explicitly passed
+      initial_balance: wallet.initial_balance,
+      icon: wallet.icon || "💰",
+      color: wallet.color || "#10B981",
+      created_at,
+    });
 
     // If initial balance > 0, create a transaction
     if (wallet.initial_balance > 0) {
       const txId = generateId("TRX");
-      const created_at = getCurrentTimestamp();
-      // Use created_at date part for transaction date
-      const date = created_at.split("T")[0];
+      const created_at_tx = getCurrentTimestamp();
+      const date = created_at_tx.split("T")[0];
 
-      await db.runAsync(
-        "INSERT INTO transactions (id, date, type, category, amount, note, wallet_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          txId,
-          date,
-          "income",
-          "Lainnya", // Or "Saldo Awal" if we add that category
-          wallet.initial_balance,
-          "Saldo Awal Wallet",
-          id,
-          created_at,
-        ],
-      );
+      await TransactionRepository.create({
+        id: txId,
+        date: date,
+        type: TRANSACTION_TYPES.INCOME,
+        category: SYSTEM_CATEGORIES.INITIAL_BALANCE,
+        amount: wallet.initial_balance,
+        note: "Saldo Awal Wallet",
+        wallet_id: id,
+        created_at: created_at_tx,
+      });
     }
 
     await get().loadWallets();
@@ -539,33 +589,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateWallet: async (id, updates) => {
-    const db = await getDatabase();
-    const fields = Object.keys(updates)
-      .map((k) => `${k} = ?`)
-      .join(", ");
-    const values = Object.values(updates);
-
-    await db.runAsync(`UPDATE wallets SET ${fields} WHERE id = ?`, [
-      ...values,
-      id,
-    ]);
-
+    await WalletRepository.update(id, updates);
     await get().loadWallets();
   },
 
   deleteWallet: async (id) => {
-    const db = await getDatabase();
     // Check if wallet has transactions
-    const txCount = await db.getFirstAsync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM transactions WHERE wallet_id = ?",
-      [id],
-    );
+    const txCount = await TransactionRepository.findAll(1, 0, { walletId: id });
 
-    if (txCount && txCount.count > 0) {
+    if (txCount && txCount.length > 0) {
       return false; // Can't delete wallet with transactions
     }
 
-    await db.runAsync("DELETE FROM wallets WHERE id = ?", [id]);
+    await WalletRepository.delete(id);
     await get().loadWallets();
     return true;
   },

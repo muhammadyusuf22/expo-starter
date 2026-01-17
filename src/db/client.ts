@@ -6,7 +6,7 @@
 import * as SQLite from "expo-sqlite";
 import { CREATE_TABLES_SQL, DEFAULT_BUDGETS, DEFAULT_WALLETS } from "./schema";
 
-const DB_NAME = "spenduit.db";
+const DB_NAME = "spenduit-lite.db";
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -66,6 +66,52 @@ export async function initializeDatabase(): Promise<void> {
   }
 
   console.log("[DB] Database initialized");
+
+  // Migration: Add transaction_id to goal_transactions if missing
+  try {
+    const tableInfo = await database.getAllAsync<any>(
+      "PRAGMA table_info(goal_transactions)",
+    );
+    const hasTxId = tableInfo.some((col) => col.name === "transaction_id");
+
+    if (!hasTxId) {
+      console.log("[DB] Migrating: Adding transaction_id to goal_transactions");
+      await database.execAsync(
+        "ALTER TABLE goal_transactions ADD COLUMN transaction_id TEXT REFERENCES transactions(id) ON DELETE CASCADE",
+      );
+
+      // Backfill using fuzzy match
+      console.log("[DB] Migrating: Backfilling transaction_id");
+
+      // Fetch all goal transactions without tx id (all of them since new column)
+      const allGTs = await database.getAllAsync<any>(
+        "SELECT * FROM goal_transactions",
+      );
+
+      for (const gt of allGTs) {
+        // Find matching tx
+        const typeCategory =
+          gt.type === "topup" ? "Tabungan" : "Pencairan Tabungan";
+        const tx = await database.getFirstAsync<any>(
+          `SELECT id FROM transactions 
+                  WHERE wallet_id = ? 
+                  AND category = ?
+                  AND created_at BETWEEN datetime(?, '-15 seconds') AND datetime(?, '+15 seconds')
+                  LIMIT 1`,
+          [gt.wallet_id, typeCategory, gt.created_at, gt.created_at],
+        );
+        if (tx) {
+          await database.runAsync(
+            "UPDATE goal_transactions SET transaction_id = ? WHERE id = ?",
+            [tx.id, gt.id],
+          );
+        }
+      }
+      console.log("[DB] Migration complete");
+    }
+  } catch (err) {
+    console.error("[DB] Migration failed", err);
+  }
 }
 
 /**

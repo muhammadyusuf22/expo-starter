@@ -1,0 +1,56 @@
+{
+    "tabs": {
+        "homes": "Homes",
+        "wallets": "Dompet",
+        "transactions": "Transaksi",
+        "add": "Tambah",
+        "goals": "Goals",
+        "reports": "Laporan",
+        "settings": "Pengaturan"
+    },
+    "wallets": {
+        "total_balance": "Total Saldo",
+        "my_wallets": "Dompet Saya",
+        "add_wallet": "Tambah Dompet",
+        "edit_wallet": "Ubah Dompet",
+        "transfer": "Transfer"
+    },
+    "transactions": {
+        "recent": "Transaksi Terakhir",
+        "see_all": "Lihat Semua",
+        "income": "Pemasukan",
+        "expense": "Pengeluaran",
+        "no_transactions": "Belum ada transaksi"
+    },
+    "goals": {
+        "my_goals": "Goals Saya",
+        "add_goal": "Tambah Goal",
+        "target": "Target",
+        "saved": "Terkumpul",
+        "deadline": "Tenggat"
+    },
+    "settings": {
+        "title": "Pengaturan",
+        "language": "Bahasa",
+        "theme": "Tema",
+        "about": "Tentang",
+        "version": "Versi"
+    },
+    "common": {
+        "save": "Simpan",
+        "cancel": "Batal",
+        "delete": "Hapus",
+        "edit": "Ubah",
+        "back": "Kembali"
+    },
+    "form": {
+        "amount": "Nominal",
+        "category": "Kategori",
+        "date": "Tanggal",
+        "note": "Catatan",
+        "wallet": "Dompet",
+        "optional": "Opsional",
+        "select_wallet": "Pilih Dompet",
+        "select_category": "Pilih Kategori"
+    }
+}

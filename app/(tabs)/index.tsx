@@ -49,14 +49,28 @@ export default function HomeScreen() {
             <YStack bg={headerBg} pt={insets.top} px="$4" pb="$3">
                 <XStack justify="space-between" items="center">
                     <YStack>
-                        <Text fontSize={20} fontWeight="bold" color={textColor}>
-                            Spen<Text color="#10B981">duit</Text>
-                        </Text>
+                        <XStack items="center" gap="$2">
+                            <Text fontSize={20} fontWeight="bold" color={textColor}>
+                                Spen<Text color="#10B981">duit</Text>
+                            </Text>
+                            <RNView
+                                style={{
+                                    backgroundColor: isDark ? "#374151" : "#E5E7EB",
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 2,
+                                    borderRadius: 6,
+                                }}
+                            >
+                                <Text fontSize={10} fontWeight="bold" color={subtextColor}>
+                                    Lite
+                                </Text>
+                            </RNView>
+                        </XStack>
                         <Text fontSize={12} color={subtextColor}>
                             {getTodayFullDate()}
                         </Text>
                     </YStack>
-                    <TouchableOpacity onPress={() => router.push("/settings" as any)}>
+                    <TouchableOpacity onPress={() => router.push("/settings")}>
                         <RNView
                             style={[styles.settingsBtn, { backgroundColor: iconBtnBg }]}
                         >
@@ -89,13 +103,7 @@ export default function HomeScreen() {
                     <CategoryChart data={dashboard.categoryBreakdown} />
 
                     {/* Recent Transactions */}
-                    <TransactionList
-                        transactions={dashboard.recentTransactions}
-                        onItemPress={(tx) => {
-                            console.log("Edit transaction:", tx.id);
-                        }}
-                        onSeeAll={() => router.push("/transactions" as any)}
-                    />
+                    <TransactionList limit={5} />
                 </YStack>
             </ScrollView>
         </YStack>

@@ -2,7 +2,9 @@
  * Settings Screen
  */
 
+import { changeLanguage } from "@/i18n";
 import { useThemeStore } from "@/store";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
     ChevronRight,
@@ -12,6 +14,7 @@ import {
     Sun,
     Wallet,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import {
     Switch as RNSwitch,
     View as RNView,
@@ -26,6 +29,11 @@ export default function SettingsScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { mode, toggleMode } = useThemeStore();
+    const { t, i18n } = useTranslation();
+
+    const handleLanguageChange = async (lang: "en" | "id") => {
+        await changeLanguage(lang);
+    };
 
     const isDark = mode === "dark";
     const bgColor = isDark ? "#0F0F0F" : "#F9FAFB";
@@ -40,7 +48,7 @@ export default function SettingsScreen() {
             {/* Header */}
             <YStack pt={insets.top + 10} px="$4" pb="$4">
                 <Text fontSize={20} fontWeight="bold" color={textColor}>
-                    Pengaturan
+                    {t("settings.title")}
                 </Text>
             </YStack>
 
@@ -99,6 +107,83 @@ export default function SettingsScreen() {
                                 thumbColor="white"
                             />
                         </XStack>
+                    </RNView>
+
+                    {/* Language Section */}
+                    <RNView
+                        style={[
+                            styles.card,
+                            { backgroundColor: cardBg, borderColor: cardBorder },
+                        ]}
+                    >
+                        <RNView
+                            style={[styles.sectionHeader, { backgroundColor: sectionBg }]}
+                        >
+                            <Text
+                                fontSize={12}
+                                fontWeight="bold"
+                                color={subtextColor}
+                                textTransform="uppercase"
+                            >
+                                {t("settings.language")}
+                            </Text>
+                        </RNView>
+
+                        <TouchableOpacity
+                            onPress={() => handleLanguageChange("id")}
+                            activeOpacity={0.7}
+                        >
+                            <XStack p="$4" justify="space-between" items="center">
+                                <XStack gap="$3" items="center">
+                                    <RNView
+                                        style={[
+                                            styles.iconBtn,
+                                            {
+                                                backgroundColor:
+                                                    i18n.language === "id" ? "#D1FAE5" : sectionBg,
+                                            },
+                                        ]}
+                                    >
+                                        <Text fontSize={20}>🇮🇩</Text>
+                                    </RNView>
+                                    <Text fontWeight="bold" color={textColor}>
+                                        Bahasa Indonesia
+                                    </Text>
+                                </XStack>
+                                {i18n.language === "id" && (
+                                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                                )}
+                            </XStack>
+                        </TouchableOpacity>
+
+                        <RNView style={[styles.divider, { backgroundColor: cardBorder }]} />
+
+                        <TouchableOpacity
+                            onPress={() => handleLanguageChange("en")}
+                            activeOpacity={0.7}
+                        >
+                            <XStack p="$4" justify="space-between" items="center">
+                                <XStack gap="$3" items="center">
+                                    <RNView
+                                        style={[
+                                            styles.iconBtn,
+                                            {
+                                                backgroundColor:
+                                                    i18n.language === "en" ? "#D1FAE5" : sectionBg,
+                                            },
+                                        ]}
+                                    >
+                                        <Text fontSize={20}>🇬🇧</Text>
+                                    </RNView>
+                                    <Text fontWeight="bold" color={textColor}>
+                                        English
+                                    </Text>
+                                </XStack>
+                                {i18n.language === "en" && (
+                                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                                )}
+                            </XStack>
+                        </TouchableOpacity>
                     </RNView>
 
                     {/* Finance Section */}
@@ -202,7 +287,7 @@ export default function SettingsScreen() {
                                 <YStack>
                                     <XStack gap="$2" items="center">
                                         <Text fontWeight="bold" color={textColor}>
-                                            Tentang
+                                            {t("settings.about")}
                                         </Text>
                                         <RNView style={styles.versionBadge}>
                                             <Text fontSize={9} color="#059669">
