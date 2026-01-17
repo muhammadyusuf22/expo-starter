@@ -14,7 +14,7 @@ import BottomSheet, {
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
     ArrowDown,
     ArrowUp,
@@ -352,19 +352,18 @@ export default function GoalsScreen() {
                     <Text fontSize={20} fontWeight="bold" color={textColor}>
                         {t("goals.my_goals")}
                     </Text>
-                    <Link href="/(tabs)/add" asChild>
-                        <TouchableOpacity>
-                            <Button
-                                size="$3"
-                                bg="#10B981"
-                                color="white"
-                                pressStyle={{ opacity: 0.8 }}
-                                icon={<Plus size={16} />}
-                            >
-                                {t("goals.add_goal")}
-                            </Button>
-                        </TouchableOpacity>
-                    </Link>
+                    <TouchableOpacity onPress={() => addSheetRef.current?.expand()}>
+                        <Button
+                            size="$3"
+                            bg="#10B981"
+                            color="white"
+                            pressStyle={{ opacity: 0.8 }}
+                            icon={<Plus size={16} />}
+                            onPress={() => addSheetRef.current?.expand()}
+                        >
+                            {t("goals.add_goal")}
+                        </Button>
+                    </TouchableOpacity>
                 </XStack>
             </YStack>
 
