@@ -1,27 +1,27 @@
 {
   "expo": {
-    "name": "expo-starter",
-    "slug": "expo-starter",
+    "name": "Spenduit",
+    "slug": "spenduit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expo-starter",
+    "scheme": "spenduit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secondson.expostarter"
+      "bundleIdentifier": "com.secondson.spenduit"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.secondson.expostarter"
+      "package": "com.secondson.spenduit"
     },
     "web": {
       "output": "static",
