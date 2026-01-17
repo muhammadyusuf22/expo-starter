@@ -154,7 +154,7 @@ export function TransactionList({
                         📋
                     </Text>
                     <Text color={subtextColor} fontSize={13}>
-                        {t("transactions.no_data")}
+                        {t("transactions.no_transactions")}
                     </Text>
                 </YStack>
             </RNView>

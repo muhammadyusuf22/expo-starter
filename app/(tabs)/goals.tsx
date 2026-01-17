@@ -198,28 +198,24 @@ export default function GoalsScreen() {
     };
 
     const handleDeleteTx = (tx: GoalTransaction) => {
-        Alert.alert(
-            "Hapus Transaksi",
-            "Apakah Anda yakin ingin menghapus transaksi ini?",
-            [
-                { text: "Batal", style: "cancel" },
-                {
-                    text: "Hapus",
-                    style: "destructive",
-                    onPress: async () => {
-                        await useAppStore.getState().deleteGoalTransaction(tx.id);
+        Alert.alert(t("goals.delete_tx_title"), t("goals.delete_tx_confirm"), [
+            { text: t("common.cancel"), style: "cancel" },
+            {
+                text: t("common.delete"),
+                style: "destructive",
+                onPress: async () => {
+                    await useAppStore.getState().deleteGoalTransaction(tx.id);
 
-                        // Reload history
-                        if (selectedGoal) {
-                            setHistoryTransactions([]);
-                            setHistoryOffset(0);
-                            setHistoryHasMore(true);
-                            setTimeout(() => handleOpenHistory(selectedGoal), 100);
-                        }
-                    },
+                    // Reload history
+                    if (selectedGoal) {
+                        setHistoryTransactions([]);
+                        setHistoryOffset(0);
+                        setHistoryHasMore(true);
+                        setTimeout(() => handleOpenHistory(selectedGoal), 100);
+                    }
                 },
-            ],
-        );
+            },
+        ]);
     };
 
     const renderHistoryItem = useCallback(
@@ -287,11 +283,14 @@ export default function GoalsScreen() {
                                 </RNView>
                                 <YStack>
                                     <Text fontWeight="600" color={textColor}>
-                                        {tx.type === "topup" ? "Topup" : "Penarikan"}
+                                        {tx.type === "topup"
+                                            ? t("goals.topup")
+                                            : t("goals.withdraw")}
                                     </Text>
                                     {wallet && (
                                         <Text fontSize={12} color={subtextColor}>
-                                            {tx.type === "topup" ? "Dari" : "Ke"} {wallet.name}
+                                            {tx.type === "topup" ? t("goals.from") : t("goals.to")}{" "}
+                                            {wallet.name}
                                         </Text>
                                     )}
                                     <Text fontSize={11} color={subtextColor}>
@@ -381,17 +380,17 @@ export default function GoalsScreen() {
                             style={styles.progressGradient}
                         >
                             <Text color="rgba(255,255,255,0.8)" fontSize={12}>
-                                Total Progress
+                                {t("goals.total_progress")}
                             </Text>
                             <Text color="white" fontSize={28} fontWeight="bold">
                                 {overallProgress}%
                             </Text>
                             <XStack justify="space-between" mt="$2">
                                 <Text color="rgba(255,255,255,0.8)" fontSize={12}>
-                                    Terkumpul: {formatRupiah(totalSaved)}
+                                    {t("goals.saved")}: {formatRupiah(totalSaved)}
                                 </Text>
                                 <Text color="rgba(255,255,255,0.8)" fontSize={12}>
-                                    Target: {formatRupiah(totalTarget)}
+                                    {t("goals.target")}: {formatRupiah(totalTarget)}
                                 </Text>
                             </XStack>
                         </LinearGradient>
@@ -403,7 +402,7 @@ export default function GoalsScreen() {
                             <Text fontSize={48} mb="$2">
                                 🎯
                             </Text>
-                            <Text color={subtextColor}>Belum ada target</Text>
+                            <Text color={subtextColor}>{t("goals.no_goals")}</Text>
                         </YStack>
                     ) : (
                         goals.map((goal) => (
@@ -425,8 +424,10 @@ export default function GoalsScreen() {
                                             </Text>
                                             <Text fontSize={12} color={subtextColor}>
                                                 {goal.days_remaining !== null
-                                                    ? `${goal.days_remaining} hari lagi`
-                                                    : "Tanpa deadline"}
+                                                    ? t("goals.days_remaining", {
+                                                        days: goal.days_remaining,
+                                                    })
+                                                    : t("goals.no_deadline")}
                                             </Text>
                                         </YStack>
                                     </XStack>
@@ -468,7 +469,7 @@ export default function GoalsScreen() {
                                         {formatRupiah(goal.target_amount)}
                                     </Text>
                                     <Text fontSize={12} color={subtextColor}>
-                                        Sisa:{" "}
+                                        {t("goals.remaining")}:{" "}
                                         {formatRupiah(
                                             goal.target_amount - (goal.current_amount || 0),
                                         )}
@@ -486,7 +487,7 @@ export default function GoalsScreen() {
                                     >
                                         <Plus size={14} color="#10B981" />
                                         <Text color="#10B981" fontSize={12} fontWeight="600">
-                                            Topup
+                                            {t("goals.topup")}
                                         </Text>
                                     </Button>
                                     <Button
@@ -497,7 +498,7 @@ export default function GoalsScreen() {
                                         onPress={() => openTopupSheet(goal, false)}
                                     >
                                         <Text color="#D97706" fontSize={12} fontWeight="600">
-                                            — Tarik
+                                            — {t("goals.withdraw")}
                                         </Text>
                                     </Button>
                                     <Button
@@ -506,12 +507,12 @@ export default function GoalsScreen() {
                                         pressStyle={{ opacity: 0.8 }}
                                         onPress={() => {
                                             Alert.alert(
-                                                "Hapus Target",
-                                                `Apakah Anda yakin ingin menghapus target "${goal.name}"?`,
+                                                t("goals.delete_title"),
+                                                t("goals.delete_confirm", { name: goal.name }),
                                                 [
-                                                    { text: "Batal", style: "cancel" },
+                                                    { text: t("common.cancel"), style: "cancel" },
                                                     {
-                                                        text: "Hapus",
+                                                        text: t("common.delete"),
                                                         style: "destructive",
                                                         onPress: () => deleteGoal(goal.id),
                                                     },
@@ -542,18 +543,18 @@ export default function GoalsScreen() {
             >
                 <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
-                        Tambah Target
+                        {t("goals.add_goal_title")}
                     </Text>
                     <YStack gap="$3">
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Nama Target
+                                {t("goals.goal_name")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
                                     value={formName}
                                     onChangeText={setFormName}
-                                    placeholder="Contoh: Beli iPhone"
+                                    placeholder={t("goals.goal_name_placeholder")}
                                     placeholderTextColor="#9CA3AF"
                                     style={[styles.input, { color: textColor }]}
                                 />
@@ -561,7 +562,7 @@ export default function GoalsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Target (Rp)
+                                {t("goals.target_amount")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
@@ -586,7 +587,7 @@ export default function GoalsScreen() {
                                     <Spinner color="white" />
                                 ) : (
                                     <Text color="white" fontWeight="bold">
-                                        Simpan Target
+                                        {t("goals.save_goal")}
                                     </Text>
                                 )}
                             </XStack>
@@ -610,7 +611,9 @@ export default function GoalsScreen() {
             >
                 <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$1">
-                        {isTopup ? "💰 Tambah Tabungan" : "💸 Tarik Dana"}
+                        {isTopup
+                            ? `💰 ${t("goals.add_savings")}`
+                            : `💸 ${t("goals.withdraw_funds")}`}
                     </Text>
                     <Text fontSize={13} color={subtextColor} mb="$4">
                         Target: {selectedGoal?.name}
@@ -618,7 +621,7 @@ export default function GoalsScreen() {
                     <YStack gap="$3">
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Jumlah (Rp)
+                                {t("form.amount")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
@@ -633,7 +636,7 @@ export default function GoalsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                {isTopup ? "Dari Wallet" : "Ke Wallet"}
+                                {isTopup ? t("form.from_wallet") : t("form.to_wallet")}
                             </Text>
                             <WalletPicker
                                 wallets={wallets}
@@ -643,7 +646,7 @@ export default function GoalsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Catatan (Opsional)
+                                {t("form.note")} ({t("form.optional")})
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
@@ -651,8 +654,8 @@ export default function GoalsScreen() {
                                     onChangeText={setTopupNote}
                                     placeholder={
                                         isTopup
-                                            ? "Contoh: Topup dari gaji"
-                                            : "Contoh: Kebutuhan darurat"
+                                            ? t("goals.topup_note_placeholder")
+                                            : t("goals.withdraw_note_placeholder")
                                     }
                                     placeholderTextColor="#9CA3AF"
                                     style={[styles.input, { color: textColor }]}
@@ -671,7 +674,7 @@ export default function GoalsScreen() {
                                     <Spinner color="white" />
                                 ) : (
                                     <Text color="white" fontWeight="bold">
-                                        {isTopup ? "Tambah" : "Tarik Dana"}
+                                        {isTopup ? t("goals.topup") : t("goals.withdraw_funds")}
                                     </Text>
                                 )}
                             </XStack>
@@ -715,7 +718,7 @@ export default function GoalsScreen() {
                             <Text fontSize={32} mb="$2">
                                 📝
                             </Text>
-                            <Text color={subtextColor}>Belum ada riwayat transaksi</Text>
+                            <Text color={subtextColor}>{t("goals.no_history")}</Text>
                         </YStack>
                     }
                 />

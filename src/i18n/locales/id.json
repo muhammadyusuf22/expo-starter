@@ -13,7 +13,15 @@
         "my_wallets": "Dompet Saya",
         "add_wallet": "Tambah Dompet",
         "edit_wallet": "Ubah Dompet",
-        "transfer": "Transfer"
+        "transfer": "Transfer",
+        "transfer_action": "Transfer Dana",
+        "wallet_name": "Nama Dompet",
+        "delete_title": "Hapus Dompet",
+        "delete_confirm": "Apakah Anda yakin ingin menghapus dompet \"{{name}}\"? Semua transaksi akan ikut terhapus.",
+        "total_net_worth": "Total Kekayaan Bersih",
+        "transfer_between_wallets": "Transfer Antar Dompet",
+        "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
+        "initial_balance": "Saldo Awal"
     },
     "transactions": {
         "recent": "Transaksi Terakhir",
@@ -27,7 +35,31 @@
         "add_goal": "Tambah Goal",
         "target": "Target",
         "saved": "Terkumpul",
-        "deadline": "Tenggat"
+        "deadline": "Tenggat",
+        "total_progress": "Total Progres",
+        "no_goals": "Belum ada target",
+        "days_remaining": "{{days}} hari lagi",
+        "no_deadline": "Tanpa tenggat",
+        "remaining": "Sisa",
+        "add_goal_title": "Tambah Target",
+        "goal_name": "Nama Target",
+        "goal_name_placeholder": "Contoh: Beli iPhone",
+        "target_amount": "Target (Rp)",
+        "save_goal": "Simpan Target",
+        "add_savings": "Tambah Tabungan",
+        "withdraw_funds": "Tarik Dana",
+        "topup_note_placeholder": "Contoh: Topup dari gaji",
+        "withdraw_note_placeholder": "Contoh: Kebutuhan darurat",
+        "delete_title": "Hapus Target",
+        "delete_confirm": "Apakah Anda yakin ingin menghapus target \"{{name}}\"?",
+        "delete_tx_title": "Hapus Transaksi",
+        "delete_tx_confirm": "Apakah Anda yakin ingin menghapus transaksi ini?",
+        "topup": "Topup",
+        "withdraw": "Tarik",
+        "from": "Dari",
+        "to": "Ke",
+        "history_title": "Riwayat",
+        "no_history": "Belum ada riwayat transaksi"
     },
     "settings": {
         "title": "Pengaturan",
@@ -51,6 +83,33 @@
         "wallet": "Dompet",
         "optional": "Opsional",
         "select_wallet": "Pilih Dompet",
-        "select_category": "Pilih Kategori"
+        "select_category": "Pilih Kategori",
+        "name": "Nama",
+        "type": "Tipe",
+        "icon": "Ikon",
+        "from_wallet": "Dari Dompet",
+        "to_wallet": "Ke Dompet",
+        "transfer_description": "Transfer antar wallet"
+    },
+    "dashboard": {
+        "balance": "Sisa Uang (Balance)",
+        "income": "Pemasukan",
+        "expense": "Pengeluaran",
+        "budget_monitoring": "Monitoring Anggaran",
+        "no_budget_data": "Belum ada data anggaran"
+    },
+    "reports": {
+        "income": "Pemasukan",
+        "expense": "Pengeluaran",
+        "net": "Sisa",
+        "category_detail": "Detail Kategori",
+        "no_expense": "Belum ada pengeluaran",
+        "daily_expense_trend": "Tren Pengeluaran Harian",
+        "no_data": "Belum ada data"
+    },
+    "category": {
+        "select_category": "Pilih Kategori",
+        "expense_category": "Kategori Pengeluaran",
+        "income_category": "Kategori Pemasukan"
     }
 }

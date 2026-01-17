@@ -8,6 +8,7 @@ import { ExpenseTrendChart, MonthPicker } from "@/features/reports";
 import { MonthlyReport, useAppStore, useThemeStore } from "@/store";
 import { formatRupiah } from "@/utils";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     RefreshControl,
@@ -20,6 +21,7 @@ import { Text, XStack, YStack } from "tamagui";
 
 export default function ReportsScreen() {
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const { getMonthlyReport } = useAppStore();
 
@@ -112,7 +114,7 @@ export default function ReportsScreen() {
                                 style={[styles.summaryCard, { borderColor: cardBorder }]}
                             >
                                 <Text fontSize={11} color={subtextColor}>
-                                    Pemasukan
+                                    {t("reports.income")}
                                 </Text>
                                 <Text fontWeight="bold" color="#10B981" fontSize={14}>
                                     {formatRupiah(reportData.totalIncome)}
@@ -126,7 +128,7 @@ export default function ReportsScreen() {
                                 style={[styles.summaryCard, { borderColor: cardBorder }]}
                             >
                                 <Text fontSize={11} color={subtextColor}>
-                                    Pengeluaran
+                                    {t("reports.expense")}
                                 </Text>
                                 <Text fontWeight="bold" color="#EF4444" fontSize={14}>
                                     {formatRupiah(reportData.totalExpense)}
@@ -140,7 +142,7 @@ export default function ReportsScreen() {
                                 style={[styles.summaryCard, { borderColor: cardBorder }]}
                             >
                                 <Text fontSize={11} color={subtextColor}>
-                                    Sisa
+                                    {t("reports.net")}
                                 </Text>
                                 <Text
                                     fontWeight="bold"
@@ -170,7 +172,7 @@ export default function ReportsScreen() {
                             }}
                         >
                             <Text fontWeight="bold" color={textColor} mb="$2">
-                                Detail Kategori
+                                {t("reports.category_detail")}
                             </Text>
                             {reportData.categoryBreakdown.map((item, index) => (
                                 <XStack
@@ -216,7 +218,7 @@ export default function ReportsScreen() {
                                     style={{ textAlign: "center" }}
                                     py="$4"
                                 >
-                                    Belum ada pengeluaran
+                                    {t("reports.no_expense")}
                                 </Text>
                             )}
                         </YStack>

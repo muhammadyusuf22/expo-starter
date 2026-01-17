@@ -1,5 +1,6 @@
 import type { DailyTrend } from "@/store"; // Need to export from store index
 import { useThemeStore } from "@/store";
+import { useTranslation } from "react-i18next";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { Text } from "tamagui";
@@ -9,6 +10,7 @@ interface ExpenseTrendChartProps {
 }
 
 export function ExpenseTrendChart({ data }: ExpenseTrendChartProps) {
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const isDark = themeMode === "dark";
     const textColor = isDark ? "#FFFFFF" : "#1F2937";
@@ -38,10 +40,10 @@ export function ExpenseTrendChart({ data }: ExpenseTrendChartProps) {
                 ]}
             >
                 <Text fontWeight="bold" color={textColor}>
-                    Tren Pengeluaran Harian
+                    {t("reports.daily_expense_trend")}
                 </Text>
                 <Text color="#9CA3AF" fontSize={12} mt="$2">
-                    Belum ada data
+                    {t("reports.no_data")}
                 </Text>
             </View>
         );
@@ -61,7 +63,7 @@ export function ExpenseTrendChart({ data }: ExpenseTrendChartProps) {
             ]}
         >
             <Text fontWeight="bold" color={textColor} mb="$4">
-                Tren Pengeluaran Harian
+                {t("reports.daily_expense_trend")}
             </Text>
             <View style={{ overflow: "hidden" }}>
                 <BarChart

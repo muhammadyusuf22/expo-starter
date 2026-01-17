@@ -6,6 +6,7 @@
 import type { Budget } from "@/db";
 import { useThemeStore } from "@/store";
 import { formatRupiah } from "@/utils";
+import { useTranslation } from "react-i18next";
 import { Text as RNText, View as RNView, StyleSheet } from "react-native";
 import { Text, XStack, YStack } from "tamagui";
 
@@ -14,6 +15,7 @@ interface BudgetProgressProps {
 }
 
 export function BudgetProgress({ budgets }: BudgetProgressProps) {
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const isDark = themeMode === "dark";
     const textColor = isDark ? "#FFFFFF" : "#1F2937";
@@ -31,10 +33,10 @@ export function BudgetProgress({ budgets }: BudgetProgressProps) {
                 ]}
             >
                 <Text fontWeight="bold" color={textColor} mb="$3">
-                    Monitoring Anggaran
+                    {t("dashboard.budget_monitoring")}
                 </Text>
                 <RNText style={[styles.emptyText, { color: subtextColor }]}>
-                    Belum ada data anggaran
+                    {t("dashboard.no_budget_data")}
                 </RNText>
             </RNView>
         );
@@ -48,7 +50,7 @@ export function BudgetProgress({ budgets }: BudgetProgressProps) {
             ]}
         >
             <Text fontWeight="bold" color={textColor} mb="$3">
-                Monitoring Anggaran
+                {t("dashboard.budget_monitoring")}
             </Text>
             <YStack gap="$4">
                 {budgets.map((budget) => (

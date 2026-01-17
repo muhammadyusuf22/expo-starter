@@ -5,6 +5,7 @@
 
 import { formatRupiah } from "@/utils";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { Text, XStack, YStack } from "tamagui";
 
@@ -15,6 +16,8 @@ interface BalanceCardProps {
 }
 
 export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
+    const { t } = useTranslation();
+
     return (
         <View style={styles.container}>
             <LinearGradient
@@ -27,7 +30,7 @@ export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
                     {/* Balance Label & Amount */}
                     <YStack>
                         <Text color="rgba(255,255,255,0.8)" fontSize={14}>
-                            Sisa Uang (Balance)
+                            {t("dashboard.balance")}
                         </Text>
                         <Text color="white" fontSize={32} fontWeight="bold">
                             {formatRupiah(balance)}
@@ -43,7 +46,7 @@ export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
                     >
                         <YStack>
                             <Text color="rgba(255,255,255,0.7)" fontSize={12}>
-                                Pemasukan
+                                {t("dashboard.income")}
                             </Text>
                             <Text color="white" fontSize={14} fontWeight="600">
                                 {formatRupiah(income)}
@@ -51,7 +54,7 @@ export function BalanceCard({ balance, income, expense }: BalanceCardProps) {
                         </YStack>
                         <YStack items="flex-end">
                             <Text color="rgba(255,255,255,0.7)" fontSize={12}>
-                                Pengeluaran
+                                {t("dashboard.expense")}
                             </Text>
                             <Text color="white" fontSize={14} fontWeight="600">
                                 {formatRupiah(expense)}

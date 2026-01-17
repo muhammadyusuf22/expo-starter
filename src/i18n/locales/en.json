@@ -13,7 +13,15 @@
         "my_wallets": "My Wallets",
         "add_wallet": "Add Wallet",
         "edit_wallet": "Edit Wallet",
-        "transfer": "Transfer"
+        "transfer": "Transfer",
+        "transfer_action": "Transfer Funds",
+        "wallet_name": "Wallet Name",
+        "delete_title": "Delete Wallet",
+        "delete_confirm": "Are you sure you want to delete wallet \"{{name}}\"? All transactions will be deleted.",
+        "total_net_worth": "Total Net Worth",
+        "transfer_between_wallets": "Transfer Between Wallets",
+        "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
+        "initial_balance": "Initial Balance"
     },
     "transactions": {
         "recent": "Recent Transactions",
@@ -27,7 +35,31 @@
         "add_goal": "Add Goal",
         "target": "Target",
         "saved": "Saved",
-        "deadline": "Deadline"
+        "deadline": "Deadline",
+        "total_progress": "Total Progress",
+        "no_goals": "No goals set yet",
+        "days_remaining": "{{days}} days left",
+        "no_deadline": "No deadline",
+        "remaining": "Remaining",
+        "add_goal_title": "Add Goal",
+        "goal_name": "Goal Name",
+        "goal_name_placeholder": "e.g. Buy iPhone",
+        "target_amount": "Target Amount (Rp)",
+        "save_goal": "Save Goal",
+        "add_savings": "Add Savings",
+        "withdraw_funds": "Withdraw Funds",
+        "topup_note_placeholder": "e.g. Savings from salary",
+        "withdraw_note_placeholder": "e.g. Emergency funds",
+        "delete_title": "Delete Goal",
+        "delete_confirm": "Are you sure you want to delete goal \"{{name}}\"?",
+        "delete_tx_title": "Delete Transaction",
+        "delete_tx_confirm": "Are you sure you want to delete this transaction?",
+        "topup": "Topup",
+        "withdraw": "Withdraw",
+        "from": "From",
+        "to": "To",
+        "history_title": "History",
+        "no_history": "No transaction history"
     },
     "settings": {
         "title": "Settings",
@@ -51,6 +83,33 @@
         "wallet": "Wallet",
         "optional": "Optional",
         "select_wallet": "Select Wallet",
-        "select_category": "Select Category"
+        "select_category": "Select Category",
+        "name": "Name",
+        "type": "Type",
+        "icon": "Icon",
+        "from_wallet": "From Wallet",
+        "to_wallet": "To Wallet",
+        "transfer_description": "Transfer between wallets"
+    },
+    "dashboard": {
+        "balance": "Balance",
+        "income": "Income",
+        "expense": "Expense",
+        "budget_monitoring": "Budget Monitoring",
+        "no_budget_data": "No budget data yet"
+    },
+    "reports": {
+        "income": "Income",
+        "expense": "Expense",
+        "net": "Net",
+        "category_detail": "Category Detail",
+        "no_expense": "No expenses yet",
+        "daily_expense_trend": "Daily Expense Trend",
+        "no_data": "No data yet"
+    },
+    "category": {
+        "select_category": "Select Category",
+        "expense_category": "Expense Category",
+        "income_category": "Income Category"
     }
 }

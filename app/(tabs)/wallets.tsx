@@ -160,19 +160,19 @@ export default function WalletsScreen() {
 
     const handleDeleteWallet = async (wallet: Wallet) => {
         Alert.alert(
-            "Hapus Wallet",
-            `Apakah Anda yakin ingin menghapus "${wallet.name}"?`,
+            t("wallets.delete_wallet"),
+            t("wallets.confirm_delete", { walletName: wallet.name }),
             [
-                { text: "Batal", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Hapus",
+                    text: t("common.delete"),
                     style: "destructive",
                     onPress: async () => {
                         const success = await deleteWallet(wallet.id);
                         if (!success) {
                             Alert.alert(
-                                "Tidak Bisa Dihapus",
-                                "Wallet ini memiliki transaksi terkait. Hapus transaksi terlebih dahulu atau transfer saldo ke wallet lain.",
+                                t("wallets.cannot_delete"),
+                                t("wallets.delete_error_message"),
                             );
                         }
                     },
@@ -196,7 +196,7 @@ export default function WalletsScreen() {
                 transferFrom,
                 transferTo,
                 amount,
-                "Transfer antar wallet",
+                t("wallets.transfer_description"),
             );
             transferSheetRef.current?.close();
             setTransferAmount("");
@@ -294,12 +294,12 @@ export default function WalletsScreen() {
 
     const handleHistoryDelete = (tx: Transaction) => {
         Alert.alert(
-            "Hapus Transaksi",
-            "Apakah Anda yakin ingin menghapus transaksi ini?",
+            t("transactions.delete_title"),
+            t("transactions.confirm_delete"),
             [
-                { text: "Batal", style: "cancel" },
+                { text: t("common.cancel"), style: "cancel" },
                 {
-                    text: "Hapus",
+                    text: t("common.delete"),
                     style: "destructive",
                     onPress: async () => {
                         // Optimistic update or reload?
@@ -433,7 +433,7 @@ export default function WalletsScreen() {
                                                 <Trash2 size={20} color="white" />
                                             </Animated.View>
                                             <Text color="white" fontSize={11} mt="$1">
-                                                Hapus
+                                                {t("common.delete")}
                                             </Text>
                                         </TouchableOpacity>
                                     </RNView>
@@ -489,18 +489,18 @@ export default function WalletsScreen() {
             >
                 <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
-                        Tambah Wallet
+                        {t("wallets.add_wallet")}
                     </Text>
                     <YStack gap="$3">
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Nama Wallet
+                                {t("wallets.wallet_name")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
                                     value={walletName}
                                     onChangeText={setWalletName}
-                                    placeholder="Contoh: BCA"
+                                    placeholder={t("wallets.wallet_name_placeholder")}
                                     placeholderTextColor="#9CA3AF"
                                     style={[styles.input, { color: textColor }]}
                                 />
@@ -509,11 +509,11 @@ export default function WalletsScreen() {
                         <IconPicker
                             value={walletIcon}
                             onChange={setWalletIcon}
-                            label="Icon"
+                            label={t("form.icon")}
                         />
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Tipe
+                                {t("form.type")}
                             </Text>
                             <XStack gap="$2" flexWrap="wrap">
                                 {(["bank", "ewallet", "cash", "other"] as const).map((t) => (
@@ -536,7 +536,7 @@ export default function WalletsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Saldo Awal (Rp)
+                                {t("wallets.initial_balance")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
@@ -561,7 +561,7 @@ export default function WalletsScreen() {
                                     <Spinner color="white" />
                                 ) : (
                                     <Text color="white" fontWeight="bold">
-                                        Simpan Wallet
+                                        {t("common.save")}
                                     </Text>
                                 )}
                             </XStack>
@@ -582,24 +582,28 @@ export default function WalletsScreen() {
             >
                 <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
-                        Edit Wallet
+                        {t("wallets.edit_wallet")}
                     </Text>
                     <YStack gap="$3">
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Nama Wallet
+                                {t("wallets.wallet_name")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
                                     value={editName}
                                     onChangeText={setEditName}
-                                    placeholder="Nama wallet"
+                                    placeholder={t("wallets.wallet_name_placeholder")}
                                     placeholderTextColor="#9CA3AF"
                                     style={[styles.input, { color: textColor }]}
                                 />
                             </RNView>
                         </YStack>
-                        <IconPicker value={editIcon} onChange={setEditIcon} label="Icon" />
+                        <IconPicker
+                            value={editIcon}
+                            onChange={setEditIcon}
+                            label={t("form.icon")}
+                        />
                         <Button
                             bg="#10B981"
                             pressStyle={{ opacity: 0.8 }}
@@ -612,7 +616,7 @@ export default function WalletsScreen() {
                                     <Spinner color="white" />
                                 ) : (
                                     <Text color="white" fontWeight="bold">
-                                        Simpan Perubahan
+                                        {t("common.save")}
                                     </Text>
                                 )}
                             </XStack>
@@ -633,12 +637,12 @@ export default function WalletsScreen() {
             >
                 <BottomSheetScrollView style={{ padding: 20 }}>
                     <Text fontSize={18} fontWeight="bold" color={textColor} mb="$4">
-                        Transfer Antar Wallet
+                        {t("wallets.transfer_title")}
                     </Text>
                     <YStack gap="$3">
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Dari Wallet
+                                {t("form.from_wallet")}
                             </Text>
                             <WalletPicker
                                 wallets={wallets}
@@ -648,7 +652,7 @@ export default function WalletsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Ke Wallet
+                                {t("form.to_wallet")}
                             </Text>
                             <WalletPicker
                                 wallets={wallets}
@@ -658,7 +662,7 @@ export default function WalletsScreen() {
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
-                                Jumlah (Rp)
+                                {t("form.amount")}
                             </Text>
                             <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
                                 <TextInput
@@ -685,7 +689,7 @@ export default function WalletsScreen() {
                                     <Spinner color="white" />
                                 ) : (
                                     <Text color="white" fontWeight="bold">
-                                        Transfer
+                                        {t("wallets.transfer_action")}
                                     </Text>
                                 )}
                             </XStack>

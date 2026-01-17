@@ -9,12 +9,14 @@ import {
 } from "@/features/transactions/components/TransactionForm";
 import { useAppStore, useThemeStore } from "@/store";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, YStack } from "tamagui";
 
 export default function AddTransactionScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const { addTransaction } = useAppStore();
 
@@ -45,7 +47,7 @@ export default function AddTransactionScreen() {
         <YStack flex={1} bg={bgColor}>
             <YStack pt={insets.top + 10} px="$4" pb="$4">
                 <Text fontSize={20} fontWeight="bold" color={textColor}>
-                    Tambah Transaksi
+                    {t("tabs.add")}
                 </Text>
             </YStack>
 

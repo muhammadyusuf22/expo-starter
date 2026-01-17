@@ -64,9 +64,6 @@ export function TransactionForm({
     const [note, setNote] = useState(initialData?.note || "");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const categories =
-        type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-
     const handleTypeChange = (newType: "expense" | "income") => {
         setType(newType);
         // Reset category if switching type, unless it was initial value and valid?
@@ -179,9 +176,8 @@ export function TransactionForm({
                             {t("form.category")}
                         </Text>
                         <CategoryPicker
-                            categories={categories}
-                            selected={category}
-                            onSelect={setCategory}
+                            value={category}
+                            onChange={setCategory}
                             type={type}
                         />
                     </YStack>

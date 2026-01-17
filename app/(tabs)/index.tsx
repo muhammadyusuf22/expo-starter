@@ -13,6 +13,7 @@ import { useAppStore, useThemeStore } from "@/store";
 import { getTodayFullDate } from "@/utils";
 import { useRouter } from "expo-router";
 import { Settings } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import {
     View as RNView,
     ScrollView,
@@ -25,6 +26,7 @@ import { Spinner, Text, XStack, YStack } from "tamagui";
 export default function HomeScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const { isLoading, dashboard } = useAppStore();
 
