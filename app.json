@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secondson.spenduit"
+      "bundleIdentifier": "id.hexaflow.spenduit"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.secondson.spenduit"
+      "package": "id.hexaflow.spenduit"
     },
     "web": {
       "output": "static",
@@ -54,7 +54,7 @@
         "projectId": "c252656c-d9d1-42f3-87f6-6b588e804e62"
       }
     },
-    "owner": "secondson",
+    "owner": "hexaflow",
     "updates": {
       "url": "https://u.expo.dev/c252656c-d9d1-42f3-87f6-6b588e804e62"
     },
