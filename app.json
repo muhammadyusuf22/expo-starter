@@ -32,7 +32,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/spenduit_logo_transparant.png",
-          "imageWidth": 250,
+          "imageWidth": 150,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
