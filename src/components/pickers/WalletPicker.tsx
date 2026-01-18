@@ -22,12 +22,14 @@ interface WalletPickerProps {
     wallets: Wallet[];
     selected: string;
     onSelect: (walletId: string) => void;
+    hasError?: boolean;
 }
 
 export function WalletPicker({
     wallets,
     selected,
     onSelect,
+    hasError = false,
 }: WalletPickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const themeMode = useThemeStore((state) => state.mode);
@@ -50,7 +52,14 @@ export function WalletPicker({
         <>
             {/* Trigger Button */}
             <TouchableOpacity
-                style={[styles.trigger, { backgroundColor: inputBg }]}
+                style={[
+                    styles.trigger,
+                    {
+                        backgroundColor: inputBg,
+                        borderWidth: hasError ? 2 : 0,
+                        borderColor: hasError ? "#EF4444" : "transparent",
+                    },
+                ]}
                 onPress={() => setIsOpen(true)}
                 activeOpacity={0.7}
             >

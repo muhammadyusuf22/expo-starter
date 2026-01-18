@@ -1,8 +1,13 @@
 import { CategoryPicker, DatePicker, WalletPicker } from "@/components";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/db";
 import { useAppStore, useThemeStore } from "@/store";
-import { formatCurrencyInput, getCurrentDateString } from "@/utils";
-import { useState } from "react";
+import {
+    formatCurrencyInput,
+    formatRupiah,
+    getCurrentDateString,
+} from "@/utils";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useMemo, useState } from "react";
 import {
     KeyboardAvoidingView,
     Platform,
@@ -63,6 +68,39 @@ export function TransactionForm({
     );
     const [note, setNote] = useState(initialData?.note || "");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Reset form when screen gains focus (for fresh form on each visit)
+    useFocusEffect(
+        useCallback(() => {
+            // Only reset if no initialData (i.e., adding new transaction, not editing)
+            if (!initialData) {
+                setType("expense");
+                setDate(getCurrentDateString());
+                setAmount("");
+                setCategory(EXPENSE_CATEGORIES[0]);
+                setWalletId(wallets[0]?.id || "WALLET-CASH");
+                setNote("");
+            }
+        }, [initialData, wallets]),
+    );
+
+    // Check if wallet has sufficient balance for expense
+    const selectedWallet = useMemo(
+        () => wallets.find((w) => w.id === walletId),
+        [wallets, walletId],
+    );
+
+    const numericAmount = useMemo(
+        () => parseInt(amount.replace(/\D/g, ""), 10) || 0,
+        [amount],
+    );
+
+    const isInsufficientBalance = useMemo(() => {
+        if (type !== "expense") return false;
+        if (!selectedWallet) return false;
+        if (numericAmount === 0) return false;
+        return (selectedWallet.current_balance || 0) < numericAmount;
+    }, [type, selectedWallet, numericAmount]);
 
     const handleTypeChange = (newType: "expense" | "income") => {
         setType(newType);
@@ -191,7 +229,15 @@ export function TransactionForm({
                             wallets={wallets}
                             selected={walletId}
                             onSelect={setWalletId}
+                            hasError={isInsufficientBalance}
                         />
+                        {isInsufficientBalance && (
+                            <Text fontSize={12} color="#EF4444" mt="$1">
+                                {t("form.insufficient_balance", {
+                                    balance: formatRupiah(selectedWallet?.current_balance || 0),
+                                })}
+                            </Text>
+                        )}
                     </YStack>
 
                     {/* Note */}
@@ -220,8 +266,8 @@ export function TransactionForm({
                         size="$5"
                         bg="#10B981"
                         pressStyle={{ opacity: 0.8 }}
-                        disabled={isSubmitting || !amount}
-                        opacity={isSubmitting || !amount ? 0.5 : 1}
+                        disabled={isSubmitting || !amount || isInsufficientBalance}
+                        opacity={isSubmitting || !amount || isInsufficientBalance ? 0.5 : 1}
                         onPress={handleSubmit}
                     >
                         <XStack gap="$2" items="center" justify="center">

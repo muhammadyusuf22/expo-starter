@@ -22,8 +22,15 @@ import BottomSheet, {
     BottomSheetModal,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeftRight, Edit2, Plus, Trash2 } from "lucide-react-native";
+import {
+    ArrowLeftRight,
+    ArrowUpDown,
+    Edit2,
+    Plus,
+    Trash2,
+} from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -105,6 +112,53 @@ export default function WalletsScreen() {
     const [historyEnd, setHistoryEnd] = useState(getCurrentDateString());
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Close all modals when navigating away from this screen
+    useFocusEffect(
+        useCallback(() => {
+            // On focus - do nothing
+            return () => {
+                // On blur - close all modals
+                addSheetRef.current?.close();
+                editSheetRef.current?.close();
+                transferSheetRef.current?.close();
+                historySheetRef.current?.close();
+                editTxSheetRef.current?.dismiss();
+            };
+        }, []),
+    );
+
+    // Transfer validation
+    const selectedTransferFromWallet = useMemo(
+        () => wallets.find((w) => w.id === transferFrom),
+        [wallets, transferFrom],
+    );
+
+    const transferNumericAmount = useMemo(
+        () => parseInt(transferAmount.replace(/\D/g, ""), 10) || 0,
+        [transferAmount],
+    );
+
+    const isInsufficientTransferBalance = useMemo(() => {
+        if (!selectedTransferFromWallet) return false;
+        if (transferNumericAmount === 0) return false;
+        return (
+            (selectedTransferFromWallet.current_balance || 0) < transferNumericAmount
+        );
+    }, [selectedTransferFromWallet, transferNumericAmount]);
+
+    // Prevent selecting same wallet
+    const availableSourceWallets = useMemo(
+        () => wallets.filter((w) => w.id !== transferTo),
+        [wallets, transferTo],
+    );
+
+    const availableDestWallets = useMemo(
+        () => wallets.filter((w) => w.id !== transferFrom),
+        [wallets, transferFrom],
+    );
+
+    // Calculate net worth
 
     // Calculate net worth
     const netWorth = wallets.reduce(
@@ -645,17 +699,56 @@ export default function WalletsScreen() {
                                 {t("form.from_wallet")}
                             </Text>
                             <WalletPicker
-                                wallets={wallets}
+                                wallets={availableSourceWallets}
                                 selected={transferFrom}
                                 onSelect={setTransferFrom}
+                                hasError={isInsufficientTransferBalance}
                             />
+                            {isInsufficientTransferBalance && (
+                                <Text fontSize={12} color="#EF4444" mt="$1">
+                                    {t("form.insufficient_balance", {
+                                        balance: formatRupiah(
+                                            selectedTransferFromWallet?.current_balance || 0,
+                                        ),
+                                    })}
+                                </Text>
+                            )}
                         </YStack>
+                        {/* Swap Button - Improved UI */}
+                        <XStack
+                            justify="center"
+                            mt={-24}
+                            mb={-24}
+                            style={{ zIndex: 10, alignSelf: "center" }}
+                        >
+                            <Button
+                                size="$3"
+                                circular
+                                bg={cardBg}
+                                borderWidth={1}
+                                borderColor={isDark ? "#374151" : "#E5E7EB"}
+                                shadowColor="#000"
+                                shadowOffset={{ width: 0, height: 2 }}
+                                shadowOpacity={0.1}
+                                shadowRadius={4}
+                                elevation={2}
+                                onPress={() => {
+                                    const temp = transferFrom;
+                                    setTransferFrom(transferTo);
+                                    setTransferTo(temp);
+                                }}
+                                pressStyle={{ scale: 0.95, opacity: 0.9 }}
+                            >
+                                <ArrowUpDown size={18} color="#3B82F6" />
+                            </Button>
+                        </XStack>
+
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
                                 {t("form.to_wallet")}
                             </Text>
                             <WalletPicker
-                                wallets={wallets}
+                                wallets={availableDestWallets}
                                 selected={transferTo}
                                 onSelect={setTransferTo}
                             />
@@ -681,8 +774,8 @@ export default function WalletsScreen() {
                             bg="#06B6D4"
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleTransfer}
-                            disabled={isSubmitting}
-                            opacity={isSubmitting ? 0.7 : 1}
+                            disabled={isSubmitting || isInsufficientTransferBalance}
+                            opacity={isSubmitting || isInsufficientTransferBalance ? 0.7 : 1}
                         >
                             <XStack gap="$2" items="center" justify="center">
                                 {isSubmitting ? (
@@ -800,35 +893,22 @@ const styles = StyleSheet.create({
         borderRadius: 16,
     },
     walletCard: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,
-    },
-    sheetInput: {
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-    },
-    input: {
-        fontSize: 16,
-        padding: 0,
-    },
-    iconBtn: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        justifyContent: "center",
+        marginBottom: 12,
+        flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
     },
     swipeActions: {
         flexDirection: "row",
         alignItems: "center",
+        marginBottom: 12,
+        height: "100%",
     },
     swipeBtn: {
-        width: 70,
+        width: 60,
         height: "100%",
         justifyContent: "center",
         alignItems: "center",
@@ -840,5 +920,14 @@ const styles = StyleSheet.create({
     },
     deleteBtn: {
         backgroundColor: "#EF4444",
+    },
+    sheetInput: {
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+    },
+    input: {
+        fontSize: 16,
+        padding: 0,
     },
 });

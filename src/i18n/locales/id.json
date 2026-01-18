@@ -71,6 +71,7 @@
         "withdraw_funds": "Tarik Dana",
         "topup_note_placeholder": "Contoh: Topup dari gaji",
         "withdraw_note_placeholder": "Contoh: Kebutuhan darurat",
+        "withdraw_exceeds_balance": "Melebihi saldo tersedia. Terkumpul: {{balance}}",
         "delete_title": "Hapus Target",
         "delete_confirm": "Apakah Anda yakin ingin menghapus target \"{{name}}\"?",
         "delete_tx_title": "Hapus Transaksi",
@@ -122,7 +123,8 @@
         "icon": "Ikon",
         "from_wallet": "Dari Dompet",
         "to_wallet": "Ke Dompet",
-        "transfer_description": "Transfer antar wallet"
+        "transfer_description": "Transfer antar wallet",
+        "insufficient_balance": "Saldo tidak cukup. Tersedia: {{balance}}"
     },
     "dashboard": {
         "balance": "Sisa Uang (Balance)",

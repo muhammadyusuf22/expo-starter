@@ -70,7 +70,8 @@
         "add_savings": "Add Savings",
         "withdraw_funds": "Withdraw Funds",
         "topup_note_placeholder": "e.g. Savings from salary",
-        "withdraw_note_placeholder": "e.g. Emergency funds",
+        "withdraw_note_placeholder": "e.g. Emergency, etc.",
+        "withdraw_exceeds_balance": "Exceeds available balance. Saved: {{balance}}",
         "delete_title": "Delete Goal",
         "delete_confirm": "Are you sure you want to delete goal \"{{name}}\"?",
         "delete_tx_title": "Delete Transaction",
@@ -122,7 +123,8 @@
         "icon": "Icon",
         "from_wallet": "From Wallet",
         "to_wallet": "To Wallet",
-        "transfer_description": "Transfer between wallets"
+        "transfer_description": "Transfer between wallets",
+        "insufficient_balance": "Insufficient balance. Available: {{balance}}"
     },
     "dashboard": {
         "balance": "Balance",

@@ -13,6 +13,7 @@ import BottomSheet, {
     BottomSheetModal,
     BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
+import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
@@ -93,6 +94,46 @@ export default function GoalsScreen() {
     const totalTarget = goals.reduce((sum, g) => sum + g.target_amount, 0);
     const overallProgress =
         totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
+
+    // Close all modals when navigating away from this screen
+    useFocusEffect(
+        useCallback(() => {
+            // On focus - do nothing
+            return () => {
+                // On blur - close all modals
+                addSheetRef.current?.close();
+                topupSheetRef.current?.close();
+                historySheetRef.current?.close();
+                editTxSheetRef.current?.dismiss();
+            };
+        }, []),
+    );
+
+    // Check if wallet has sufficient balance for topup
+    const selectedTopupWallet = useMemo(
+        () => wallets.find((w) => w.id === topupWallet),
+        [wallets, topupWallet],
+    );
+
+    const topupNumericAmount = useMemo(
+        () => parseInt(topupAmount.replace(/\D/g, ""), 10) || 0,
+        [topupAmount],
+    );
+
+    const isTopupInsufficientBalance = useMemo(() => {
+        if (!isTopup) return false; // Only check for topup, not withdraw
+        if (!selectedTopupWallet) return false;
+        if (topupNumericAmount === 0) return false;
+        return (selectedTopupWallet.current_balance || 0) < topupNumericAmount;
+    }, [isTopup, selectedTopupWallet, topupNumericAmount]);
+
+    // Check if withdraw amount exceeds goal's current balance
+    const isWithdrawExceedsBalance = useMemo(() => {
+        if (isTopup) return false; // Only check for withdraw
+        if (!selectedGoal) return false;
+        if (topupNumericAmount === 0) return false;
+        return (selectedGoal.current_amount || 0) < topupNumericAmount;
+    }, [isTopup, selectedGoal, topupNumericAmount]);
 
     const handleAddGoal = async () => {
         if (!formName || !formTarget) return;
@@ -623,7 +664,18 @@ export default function GoalsScreen() {
                             <Text fontSize={12} color={subtextColor} mb="$1">
                                 {t("form.amount")}
                             </Text>
-                            <RNView style={[styles.sheetInput, { backgroundColor: inputBg }]}>
+                            <RNView
+                                style={[
+                                    styles.sheetInput,
+                                    {
+                                        backgroundColor: inputBg,
+                                        borderWidth: isWithdrawExceedsBalance ? 2 : 0,
+                                        borderColor: isWithdrawExceedsBalance
+                                            ? "#EF4444"
+                                            : "transparent",
+                                    },
+                                ]}
+                            >
                                 <TextInput
                                     value={topupAmount}
                                     onChangeText={(t) => setTopupAmount(formatCurrencyInput(t))}
@@ -633,6 +685,13 @@ export default function GoalsScreen() {
                                     style={[styles.input, { color: textColor }]}
                                 />
                             </RNView>
+                            {isWithdrawExceedsBalance && (
+                                <Text fontSize={12} color="#EF4444" mt="$1">
+                                    {t("goals.withdraw_exceeds_balance", {
+                                        balance: formatRupiah(selectedGoal?.current_amount || 0),
+                                    })}
+                                </Text>
+                            )}
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
@@ -642,7 +701,17 @@ export default function GoalsScreen() {
                                 wallets={wallets}
                                 selected={topupWallet}
                                 onSelect={setTopupWallet}
+                                hasError={isTopupInsufficientBalance}
                             />
+                            {isTopupInsufficientBalance && (
+                                <Text fontSize={12} color="#EF4444" mt="$1">
+                                    {t("form.insufficient_balance", {
+                                        balance: formatRupiah(
+                                            selectedTopupWallet?.current_balance || 0,
+                                        ),
+                                    })}
+                                </Text>
+                            )}
                         </YStack>
                         <YStack>
                             <Text fontSize={12} color={subtextColor} mb="$1">
@@ -666,8 +735,18 @@ export default function GoalsScreen() {
                             bg={isTopup ? "#10B981" : "#EF4444"}
                             pressStyle={{ opacity: 0.8 }}
                             onPress={handleTopup}
-                            disabled={isSubmitting}
-                            opacity={isSubmitting ? 0.7 : 1}
+                            disabled={
+                                isSubmitting ||
+                                isTopupInsufficientBalance ||
+                                isWithdrawExceedsBalance
+                            }
+                            opacity={
+                                isSubmitting ||
+                                    isTopupInsufficientBalance ||
+                                    isWithdrawExceedsBalance
+                                    ? 0.7
+                                    : 1
+                            }
                         >
                             <XStack gap="$2" items="center" justify="center">
                                 {isSubmitting ? (
