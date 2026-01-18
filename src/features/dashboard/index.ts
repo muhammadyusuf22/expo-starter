@@ -1,5 +1,6 @@
 export {
   BalanceCard,
+  BudgetDetailSheet,
   BudgetProgress,
   CategoryChart,
   SavingsRateCard,

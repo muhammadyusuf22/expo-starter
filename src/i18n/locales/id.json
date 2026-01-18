@@ -131,7 +131,11 @@
         "income": "Pemasukan",
         "expense": "Pengeluaran",
         "budget_monitoring": "Monitoring Anggaran",
-        "no_budget_data": "Belum ada data anggaran"
+        "budget_status": "Status Anggaran",
+        "spent": "Terpakai",
+        "budget_remaining": "Sisa Rp {{amount}}",
+        "over_budget": "Melebihi anggaran",
+        "no_budget_data": "Belum ada anggaran diatur"
     },
     "reports": {
         "income": "Pemasukan",

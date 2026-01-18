@@ -131,7 +131,11 @@
         "income": "Income",
         "expense": "Expense",
         "budget_monitoring": "Budget Monitoring",
-        "no_budget_data": "No budget data yet"
+        "budget_status": "Budget Status",
+        "spent": "Spent",
+        "budget_remaining": "{{amount}} remaining",
+        "over_budget": "Over budget",
+        "no_budget_data": "No budget set yet"
     },
     "reports": {
         "income": "Income",

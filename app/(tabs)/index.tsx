@@ -4,6 +4,7 @@
 
 import {
     BalanceCard,
+    BudgetDetailSheet,
     BudgetProgress,
     CategoryChart,
     SavingsRateCard,
@@ -11,8 +12,10 @@ import {
 } from "@/features/dashboard";
 import { useAppStore, useThemeStore } from "@/store";
 import { getTodayFullDate } from "@/utils";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import { Settings } from "lucide-react-native";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
     View as RNView,
@@ -29,6 +32,9 @@ export default function HomeScreen() {
     const { t } = useTranslation();
     const themeMode = useThemeStore((state) => state.mode);
     const { isLoading, dashboard } = useAppStore();
+
+    // Bottom Sheet Ref
+    const budgetDetailSheetRef = useRef<BottomSheet>(null);
 
     const isDark = themeMode === "dark";
     const bgColor = isDark ? "#0F0F0F" : "#F9FAFB";
@@ -99,7 +105,10 @@ export default function HomeScreen() {
                     <SavingsRateCard rate={dashboard.savingsRate} />
 
                     {/* Budget Monitoring */}
-                    <BudgetProgress budgets={dashboard.budgetOverview} />
+                    <BudgetProgress
+                        budgets={dashboard.budgetOverview}
+                        onPress={() => budgetDetailSheetRef.current?.expand()}
+                    />
 
                     {/* Category Chart */}
                     <CategoryChart data={dashboard.categoryBreakdown} />
@@ -108,6 +117,12 @@ export default function HomeScreen() {
                     <TransactionList limit={5} />
                 </YStack>
             </ScrollView>
+
+            {/* Budget Detail Sheet */}
+            <BudgetDetailSheet
+                ref={budgetDetailSheetRef}
+                budgets={dashboard.budgetOverview}
+            />
         </YStack>
     );
 }
