@@ -26,7 +26,8 @@
         "confirm_delete": "Apakah Anda yakin ingin menghapus dompet \"{{walletName}}\"?",
         "cannot_delete": "Tidak Dapat Menghapus",
         "delete_error_message": "Dompet ini masih memiliki transaksi. Hapus semua transaksi terlebih dahulu.",
-        "transfer_title": "Transfer Antar Dompet"
+        "transfer_title": "Transfer Antar Dompet",
+        "transfer_description": "Transfer antar dompet"
     },
     "icon_picker": {
         "select_icon": "Pilih Ikon",
@@ -41,7 +42,14 @@
         "see_all": "Lihat Semua",
         "income": "Pemasukan",
         "expense": "Pengeluaran",
-        "no_transactions": "Belum ada transaksi"
+        "no_transactions": "Belum ada transaksi",
+        "delete_title": "Hapus Transaksi",
+        "confirm_delete": "Apakah Anda yakin ingin menghapus transaksi ini?",
+        "search_placeholder": "Cari transaksi..."
+    },
+    "transaction": {
+        "income": "Pemasukan",
+        "expense": "Pengeluaran"
     },
     "goals": {
         "my_goals": "Goals Saya",
