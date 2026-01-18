@@ -39,15 +39,8 @@ export async function initializeDatabase(): Promise<void> {
   if (wallets.length === 0) {
     for (const wallet of DEFAULT_WALLETS) {
       await database.runAsync(
-        "INSERT INTO wallets (id, name, type, initial_balance, icon, color) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-          wallet.id,
-          wallet.name,
-          wallet.type,
-          wallet.initial_balance,
-          wallet.icon,
-          wallet.color,
-        ],
+        "INSERT INTO wallets (id, name, type, icon, color) VALUES (?, ?, ?, ?, ?)",
+        [wallet.id, wallet.name, wallet.type, wallet.icon, wallet.color],
       );
     }
     console.log("[DB] Seeded default wallets");

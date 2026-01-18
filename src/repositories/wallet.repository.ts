@@ -6,7 +6,7 @@ export const WalletRepository = {
     const db = await getDatabase();
     return db.getAllAsync<Wallet>(
       `SELECT w.*, 
-       (w.initial_balance + COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END), 0)) as current_balance
+       COALESCE(SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE -t.amount END), 0) as current_balance
        FROM wallets w
        LEFT JOIN transactions t ON t.wallet_id = w.id
        GROUP BY w.id
@@ -17,12 +17,11 @@ export const WalletRepository = {
   create: async (wallet: Wallet) => {
     const db = await getDatabase();
     await db.runAsync(
-      "INSERT INTO wallets (id, name, type, initial_balance, icon, color, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO wallets (id, name, type, icon, color, created_at) VALUES (?, ?, ?, ?, ?, ?)",
       [
         wallet.id,
         wallet.name,
         wallet.type,
-        wallet.initial_balance,
         wallet.icon,
         wallet.color,
         wallet.created_at,

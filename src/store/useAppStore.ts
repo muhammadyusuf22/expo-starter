@@ -98,7 +98,9 @@ interface AppState {
   // Wallets
   loadWallets: () => Promise<void>;
   addWallet: (
-    wallet: Omit<Wallet, "id" | "created_at" | "current_balance">,
+    wallet: Omit<Wallet, "id" | "created_at" | "current_balance"> & {
+      initial_balance?: number;
+    },
   ) => Promise<string>;
   updateWallet: (id: string, wallet: Partial<Wallet>) => Promise<void>;
   deleteWallet: (id: string) => Promise<boolean>;
@@ -563,15 +565,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     await WalletRepository.create({
       id,
       name: wallet.name,
-      type: wallet.type, // Explicitly passed
-      initial_balance: wallet.initial_balance,
+      type: wallet.type,
       icon: wallet.icon || "💰",
       color: wallet.color || "#10B981",
       created_at,
     });
 
-    // If initial balance > 0, create a transaction
-    if (wallet.initial_balance > 0) {
+    // If initial balance > 0, create an income transaction
+    // This is the single source of truth for wallet balance
+    if (wallet.initial_balance && wallet.initial_balance > 0) {
       const txId = generateId("TRX");
       const created_at_tx = getCurrentTimestamp();
       const date = created_at_tx.split("T")[0];
@@ -589,8 +591,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     await get().loadWallets();
-    await get().loadTransactions(); // Reload transactions needed
-    await get().loadDashboard(); // Reload dashboard needed
+    await get().loadTransactions();
+    await get().loadDashboard();
     return id;
   },
 

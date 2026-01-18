@@ -21,7 +21,12 @@
         "total_net_worth": "Total Net Worth",
         "transfer_between_wallets": "Transfer Between Wallets",
         "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
-        "initial_balance": "Initial Balance"
+        "initial_balance": "Initial Balance",
+        "delete_wallet": "Delete Wallet",
+        "confirm_delete": "Are you sure you want to delete wallet \"{{walletName}}\"?",
+        "cannot_delete": "Cannot Delete",
+        "delete_error_message": "This wallet still has transactions. Delete all transactions first.",
+        "transfer_title": "Transfer Between Wallets"
     },
     "icon_picker": {
         "select_icon": "Select Icon",

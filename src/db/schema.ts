@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS wallets (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   type TEXT CHECK(type IN ('cash', 'bank', 'ewallet', 'other')),
-  initial_balance INTEGER DEFAULT 0,
   icon TEXT DEFAULT '💰',
   color TEXT DEFAULT '#10B981',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -74,7 +73,6 @@ export interface Wallet {
   id: string;
   name: string;
   type: "cash" | "bank" | "ewallet" | "other";
-  initial_balance: number;
   icon: string;
   color: string;
   created_at: string;
@@ -158,7 +156,6 @@ export const DEFAULT_WALLETS: Omit<Wallet, "created_at" | "current_balance">[] =
       id: "WALLET-CASH",
       name: "Cash",
       type: "cash",
-      initial_balance: 0,
       icon: "💵",
       color: "#10B981",
     },
@@ -166,7 +163,6 @@ export const DEFAULT_WALLETS: Omit<Wallet, "created_at" | "current_balance">[] =
       id: "WALLET-BANK",
       name: "Rekening Bank",
       type: "bank",
-      initial_balance: 0,
       icon: "🏦",
       color: "#3B82F6",
     },
@@ -174,7 +170,6 @@ export const DEFAULT_WALLETS: Omit<Wallet, "created_at" | "current_balance">[] =
       id: "WALLET-EWALLET",
       name: "E-Wallet",
       type: "ewallet",
-      initial_balance: 0,
       icon: "📱",
       color: "#8B5CF6",
     },

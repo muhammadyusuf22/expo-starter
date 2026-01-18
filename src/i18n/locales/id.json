@@ -21,7 +21,12 @@
         "total_net_worth": "Total Kekayaan Bersih",
         "transfer_between_wallets": "Transfer Antar Dompet",
         "wallet_name_placeholder": "e.g. Cash, Bank, etc.",
-        "initial_balance": "Saldo Awal"
+        "initial_balance": "Saldo Awal",
+        "delete_wallet": "Hapus Dompet",
+        "confirm_delete": "Apakah Anda yakin ingin menghapus dompet \"{{walletName}}\"?",
+        "cannot_delete": "Tidak Dapat Menghapus",
+        "delete_error_message": "Dompet ini masih memiliki transaksi. Hapus semua transaksi terlebih dahulu.",
+        "transfer_title": "Transfer Antar Dompet"
     },
     "icon_picker": {
         "select_icon": "Pilih Ikon",
